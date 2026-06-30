@@ -448,11 +448,8 @@ async function onDrop(e) {
 
   const data = await res.json();
   if (data.success) {
-    // Remove from unallocated
-    allJobs = allJobs.filter(j => j.job_id !== dragJobId);
-    // Add to allocations
+    // Job stays in sidebar - can be allocated to multiple contractors/days
     await loadAllocations();
-    renderSidebar();
     renderGrid();
     dragJobId = null;
   }
