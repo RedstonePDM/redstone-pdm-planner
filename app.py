@@ -13,7 +13,7 @@ from datetime import datetime, date, timedelta
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 from functools import wraps
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder=".")
 app.secret_key = os.environ.get("SECRET_KEY", "redstone-pdm-2024")
 
 DATABASE_URL = os.environ["DATABASE_URL"]
