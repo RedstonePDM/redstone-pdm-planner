@@ -41,6 +41,17 @@ def get_db():
 def init_db():
     conn = get_db()
     cur = conn.cursor()
+
+    # First pass: drop the unique constraint if it exists from an earlier version
+    try:
+        cur.execute("""
+            ALTER TABLE allocations 
+            DROP CONSTRAINT IF EXISTS allocations_week_start_job_id_contractor_day_date_key
+        """)
+        conn.commit()
+    except Exception:
+        conn.rollback()
+
     cur.execute("""
         CREATE TABLE IF NOT EXISTS allocations (
             id              SERIAL PRIMARY KEY,
