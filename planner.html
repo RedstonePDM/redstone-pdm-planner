@@ -417,8 +417,10 @@ function onJobDragStart(e, jobId) {
 }
 
 function onDragOver(e) {
+  const cell = e.currentTarget;
+  if (cell.classList.contains('day-off')) return; // block drop on day-off
   e.preventDefault();
-  e.currentTarget.classList.add('drag-over');
+  cell.classList.add('drag-over');
 }
 
 function onDragLeave(e) {
@@ -431,6 +433,7 @@ async function onDrop(e) {
   cell.classList.remove('drag-over');
 
   if (!dragJobId) return;
+  if (cell.classList.contains('day-off')) return; // blocked
 
   const contractor = cell.dataset.contractor;
   const dayDate = cell.dataset.date;
