@@ -1,562 +1,383 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Redstone PDM – Weekly Planner</title>
-<style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; color: #1a1a2e; font-size: 13px; }
-
-/* Header */
-.header { background: #1a1a2e; color: white; padding: 0 20px; height: 52px; display: flex; align-items: center; gap: 20px; position: sticky; top: 0; z-index: 100; }
-.header h1 { font-size: 16px; font-weight: 700; }
-.header .dot { color: #e63946; }
-.week-nav { display: flex; align-items: center; gap: 8px; margin-left: auto; }
-.week-nav a { color: white; text-decoration: none; background: rgba(255,255,255,0.15); padding: 5px 10px; border-radius: 4px; font-size: 12px; }
-.week-nav a:hover { background: rgba(255,255,255,0.25); }
-.week-label { font-size: 13px; font-weight: 600; }
-.btn-logout { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 12px; }
-
-/* Layout */
-.layout { display: flex; height: calc(100vh - 52px); }
-
-/* Sidebar */
-.sidebar { width: 280px; min-width: 280px; background: white; border-right: 1px solid #e0e0e0; display: flex; flex-direction: column; }
-.sidebar-header { padding: 12px 14px; border-bottom: 1px solid #e0e0e0; }
-.sidebar-header h2 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #888; }
-.sidebar-search { padding: 8px 14px; border-bottom: 1px solid #e0e0e0; }
-.sidebar-search input { width: 100%; padding: 7px 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 12px; outline: none; }
-.job-list { flex: 1; overflow-y: auto; padding: 8px; }
-.job-card { background: white; border: 1.5px solid #e0e0e0; border-radius: 6px; padding: 8px 10px; margin-bottom: 6px; cursor: grab; transition: box-shadow 0.15s, border-color 0.15s; user-select: none; }
-.job-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-color: #1a1a2e; }
-.job-card.dragging { opacity: 0.5; box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
-.job-card .job-id { font-size: 10px; color: #888; font-family: monospace; }
-.job-card .job-site { font-size: 12px; font-weight: 600; color: #1a1a2e; margin: 2px 0; }
-.job-card .job-trade { font-size: 11px; color: #555; }
-.job-card .job-desc { font-size: 11px; color: #777; margin-top: 3px; line-height: 1.3; max-height: 32px; overflow: hidden; }
-.job-card .job-due { font-size: 10px; margin-top: 4px; }
-.job-card .job-due.overdue { color: #e63946; font-weight: 600; }
-.job-card .job-due.soon { color: #f4a261; font-weight: 600; }
-.job-card .job-due.ok { color: #888; }
-.tag { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; margin-right: 3px; }
-.tag-callout { background: #fff0f0; color: #e63946; }
-.tag-quote { background: #e8f4fd; color: #2196f3; }
-.tag-quoterequest { background: #fff8e1; color: #f57c00; }
-.tag-miv { background: #f3e5f5; color: #9c27b0; }
-.tag-ppm { background: #e8f5e9; color: #388e3c; }
-
-/* Grid */
-.grid-wrapper { flex: 1; overflow: auto; }
-.grid { min-width: max-content; }
-
-/* Grid header */
-.grid-head { display: grid; position: sticky; top: 0; z-index: 50; background: white; border-bottom: 2px solid #e0e0e0; box-shadow: 0 2px 4px rgba(0,0,0,0.06); }
-.grid-head .corner { width: 110px; min-width: 110px; padding: 10px 8px; font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; }
-.grid-head .col-head { padding: 8px 10px; min-width: 170px; border-left: 1px solid #e8e8e8; }
-.col-head .name { font-size: 12px; font-weight: 700; color: #1a1a2e; }
-.col-head .job-count { font-size: 10px; color: #888; margin-top: 1px; }
-
-/* Day rows */
-.day-row { display: grid; border-bottom: 1px solid #e8e8e8; }
-.day-label { width: 110px; min-width: 110px; padding: 8px; background: white; border-right: 2px solid #e0e0e0; position: sticky; left: 0; z-index: 10; }
-.day-label .day-name { font-size: 12px; font-weight: 700; color: #1a1a2e; }
-.day-label .day-date { font-size: 10px; color: #888; }
-.day-label.today .day-name { color: #e63946; }
-
-/* Cells */
-.cell { min-width: 170px; min-height: 80px; padding: 6px; border-left: 1px solid #e8e8e8; background: #fafafa; vertical-align: top; position: relative; transition: background 0.15s; }
-.cell.drag-over { background: #e8f4fd; border: 2px dashed #2196f3; }
-.cell.day-off { background: #f5f5f5; }
-.cell.day-off::after { content: 'OFF'; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 10px; font-weight: 700; color: #ccc; letter-spacing: 2px; }
-
-/* Allocated cards */
-.alloc-card { background: white; border: 1.5px solid #e0e0e0; border-radius: 5px; padding: 6px 8px; margin-bottom: 4px; position: relative; }
-.alloc-card.is-survey { border-left: 3px solid #f4a261; background: #fffaf5; }
-.alloc-card .alloc-id { font-size: 10px; color: #888; font-family: monospace; }
-.alloc-card .alloc-site { font-size: 11px; font-weight: 600; color: #1a1a2e; }
-.alloc-card .alloc-trade { font-size: 10px; color: #666; }
-.alloc-card .alloc-notes { font-size: 10px; color: #e63946; font-style: italic; margin-top: 2px; }
-.alloc-card .btn-remove { position: absolute; top: 4px; right: 4px; background: none; border: none; color: #ccc; cursor: pointer; font-size: 14px; line-height: 1; padding: 0 2px; }
-.alloc-card .btn-remove:hover { color: #e63946; }
-.alloc-card .btn-notes { background: none; border: none; color: #aaa; cursor: pointer; font-size: 10px; padding: 0; margin-top: 2px; }
-.alloc-card .alloc-desc { font-size: 10px; color: #555; margin-top: 2px; line-height: 1.3; }
-.alloc-card .btn-notes:hover { color: #1a1a2e; }
-
-/* Day off toggle */
-.day-off-toggle { position: absolute; bottom: 4px; right: 4px; }
-.day-off-toggle button { background: none; border: 1px solid #e0e0e0; border-radius: 4px; font-size: 9px; padding: 2px 5px; cursor: pointer; color: #aaa; }
-.day-off-toggle button:hover { background: #f5f5f5; color: #666; }
-
-/* Modal */
-.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center; }
-.modal-overlay.active { display: flex; }
-.modal { background: white; border-radius: 10px; padding: 24px; width: 440px; max-width: 95vw; }
-.modal h3 { font-size: 15px; font-weight: 700; margin-bottom: 16px; }
-.modal label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 6px; }
-.modal textarea { width: 100%; padding: 10px; border: 1.5px solid #e0e0e0; border-radius: 6px; font-size: 13px; resize: vertical; min-height: 80px; outline: none; font-family: inherit; }
-.modal textarea:focus { border-color: #1a1a2e; }
-.modal-actions { display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end; }
-.btn { padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; }
-.btn-primary { background: #1a1a2e; color: white; }
-.btn-primary:hover { background: #16213e; }
-.btn-secondary { background: #f0f0f0; color: #444; }
-.btn-secondary:hover { background: #e0e0e0; }
-.modal-check { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 13px; }
-
-/* Job detail panel */
-.job-detail { display: none; position: fixed; right: 0; top: 52px; width: 320px; height: calc(100vh - 52px); background: white; border-left: 1px solid #e0e0e0; z-index: 90; overflow-y: auto; padding: 16px; box-shadow: -4px 0 12px rgba(0,0,0,0.08); }
-.job-detail.active { display: block; }
-.job-detail .close { float: right; background: none; border: none; font-size: 18px; cursor: pointer; color: #888; }
-.job-detail h3 { font-size: 14px; font-weight: 700; margin-bottom: 12px; }
-.detail-row { margin-bottom: 10px; }
-.detail-row .label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #888; margin-bottom: 2px; }
-.detail-row .value { font-size: 13px; color: #1a1a2e; line-height: 1.5; }
-
-/* Loading */
-.loading { text-align: center; padding: 40px; color: #888; font-size: 13px; }
-.count-badge { display: inline-block; background: #e63946; color: white; border-radius: 10px; padding: 1px 6px; font-size: 10px; font-weight: 700; margin-left: 4px; }
-
-/* Sidebar tabs */
-.sidebar-tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px; border-bottom: 1px solid #e0e0e0; background: #fafafa; }
-.stab { flex: 1; min-width: 0; padding: 5px 4px; border: 1.5px solid #e0e0e0; border-radius: 5px; background: white; font-size: 10px; font-weight: 600; cursor: pointer; color: #666; transition: all 0.15s; white-space: nowrap; }
-.stab:hover { border-color: #1a1a2e; color: #1a1a2e; }
-.stab.active { background: #1a1a2e; color: white; border-color: #1a1a2e; }
-.stab-count { display: inline-block; background: rgba(0,0,0,0.15); border-radius: 8px; padding: 0 5px; font-size: 9px; margin-left: 2px; }
-</style>
-</head>
-<body>
-
-<div class="header">
-  <h1>Redstone<span class="dot">.</span>PDM</h1>
-  <span style="color:rgba(255,255,255,0.4);font-size:12px;">Weekly Planner</span>
-  <div class="week-nav">
-    <a href="/?week={{ prev_week }}">← Prev</a>
-    <span class="week-label">
-      w/c {{ week_dates[0].strftime('%d %b %Y') }}
-    </span>
-    <a href="/?week={{ next_week }}">Next →</a>
-  </div>
-  <a href="/logout" class="btn-logout">Sign out</a>
-</div>
-
-<div class="layout">
-  <!-- Sidebar: unallocated jobs -->
-  <div class="sidebar">
-    <div class="sidebar-header">
-      <h2>Unallocated Jobs <span class="count-badge" id="unallocated-count">0</span></h2>
-    </div>
-    <div class="sidebar-search">
-      <input type="text" id="search-input" placeholder="Search..." oninput="filterJobs()">
-    </div>
-    <div class="sidebar-tabs">
-      <button class="stab active" onclick="setTab('CALLOUT')" id="tab-CALLOUT">Callouts <span class="stab-count" id="stab-count-CALLOUT">0</span></button>
-      <button class="stab" onclick="setTab('QUOTE')" id="tab-QUOTE">Quotes <span class="stab-count" id="stab-count-QUOTE">0</span></button>
-      <button class="stab" onclick="setTab('MIV')" id="tab-MIV">MIV <span class="stab-count" id="stab-count-MIV">0</span></button>
-      <button class="stab" onclick="setTab('PPM')" id="tab-PPM">PPM <span class="stab-count" id="stab-count-PPM">0</span></button>
-      <button class="stab" onclick="setTab('QUOTEREQUEST')" id="tab-QUOTEREQUEST">Requests <span class="stab-count" id="stab-count-QUOTEREQUEST">0</span></button>
-    </div>
-    <div class="job-list" id="job-list">
-      <div class="loading">Loading jobs...</div>
-    </div>
-  </div>
-
-  <!-- Planning grid -->
-  <div class="grid-wrapper">
-    <div class="grid" id="grid">
-
-      <!-- Header row -->
-      <div class="grid-head" id="grid-head" style="grid-template-columns: 110px repeat({{ contractors|length }}, 170px);">
-        <div class="corner">Day</div>
-        {% for c in contractors %}
-        <div class="col-head">
-          <div class="name">{{ c.split()[0] }} {{ c.split()[1][0] if c.split()|length > 1 else '' }}.</div>
-          <div class="job-count" id="count-{{ loop.index0 }}">0 jobs</div>
-        </div>
-        {% endfor %}
-      </div>
-
-      <!-- Day rows -->
-      {% for day in week_dates %}
-      {% set day_str = day.strftime('%Y-%m-%d') %}
-      {% set day_name = day.strftime('%A') %}
-      {% set day_display = day.strftime('%d %b') %}
-      <div class="day-row" style="grid-template-columns: 110px repeat({{ contractors|length }}, 170px);">
-        <div class="day-label {% if day == today %}today{% endif %}" id="daylabel-{{ day_str }}">
-          <div class="day-name">{{ day_name }}</div>
-          <div class="day-date">{{ day_display }}</div>
-        </div>
-        {% for c in contractors %}
-        {% set slug = c.lower().replace(' ', '-') %}
-        <div class="cell"
-          id="cell-{{ slug }}-{{ day_str }}"
-          data-contractor="{{ c }}"
-          data-date="{{ day_str }}"
-          ondragover="onDragOver(event)"
-          ondragleave="onDragLeave(event)"
-          ondrop="onDrop(event)">
-          <div class="day-off-toggle">
-            <button onclick="toggleDayOff('{{ c }}', '{{ day_str }}', this)" title="Toggle day off">Off</button>
-          </div>
-        </div>
-        {% endfor %}
-      </div>
-      {% endfor %}
-
-    </div>
-  </div>
-</div>
-
-<!-- Notes Modal -->
-<div class="modal-overlay" id="notes-modal">
-  <div class="modal">
-    <h3>Edit Notes</h3>
-    <div class="modal-check">
-      <input type="checkbox" id="modal-survey" onchange="updateModalSurvey()">
-      <label for="modal-survey">This is a survey visit</label>
-    </div>
-    <label>Notes for contractor</label>
-    <textarea id="modal-notes" placeholder="Add instructions, coordination notes, materials required..."></textarea>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeNotesModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="saveNotes()">Save</button>
-    </div>
-  </div>
-</div>
-
-<!-- Job Detail Panel -->
-<div class="job-detail" id="job-detail">
-  <button class="close" onclick="closeDetail()">×</button>
-  <h3 id="detail-title">Job Details</h3>
-  <div id="detail-content"></div>
-</div>
-
-<script>
-const WEEK_START = "{{ week_start }}";
-const CONTRACTORS = {{ contractors | tojson }};
-let allJobs = [];
-let allocations = [];
-let dragJobId = null;
-let dragAllocId = null;
-let currentNotesAllocId = null;
-let dayStatuses = {};
-let activeTab = 'CALLOUT';
-
-// ── Init ──────────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  loadData();
-});
-
-async function loadData() {
-  await Promise.all([loadJobs(), loadAllocations(), loadDayStatuses()]);
-  renderGrid();
-}
-
-// ── Load Data ─────────────────────────────────────────────────────────────────
-async function loadJobs() {
-  const res = await fetch(`/api/jobs/unallocated?week=${WEEK_START}`);
-  allJobs = await res.json();
-  renderSidebar();
-}
-
-async function loadAllocations() {
-  const res = await fetch(`/api/jobs/allocated?week=${WEEK_START}`);
-  allocations = await res.json();
-}
-
-async function loadDayStatuses() {
-  const res = await fetch(`/api/contractor-days?week=${WEEK_START}`);
-  dayStatuses = await res.json();
-}
-
-// ── Sidebar ───────────────────────────────────────────────────────────────────
-function setTab(tab) {
-  activeTab = tab;
-  document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-' + tab).classList.add('active');
-  renderSidebar();
-}
-
-function renderSidebar() {
-  const list = document.getElementById('job-list');
-  const query = document.getElementById('search-input').value.toLowerCase();
-
-  const tabMap = {
-    'CALLOUT': ['CALLOUT'],
-    'QUOTE': ['QUOTE'],
-    'MIV': ['MIV'],
-    'PPM': ['PPM'],
-    'QUOTEREQUEST': ['QUOTEREQUEST'],
-  };
-  const allowedTabs = tabMap[activeTab] || [activeTab];
-
-  // Update tab counts
-  ['CALLOUT','QUOTE','MIV','PPM','QUOTEREQUEST'].forEach(function(t) {
-    const tabs = tabMap[t] || [t];
-    const count = allJobs.filter(function(j){ return tabs.includes(j.tab); }).length;
-    const el = document.getElementById('stab-count-' + t);
-    if (el) el.textContent = count;
-  });
-
-  document.getElementById('unallocated-count').textContent = allJobs.length;
-
-  let filtered = allJobs.filter(function(j){ return allowedTabs.includes(j.tab); });
-
-  if (activeTab === 'PPM') {
-    filtered = filtered.slice(0, 10);
-  }
-
-  if (query) {
-    filtered = filtered.filter(function(j) {
-      return (j.pub_name || '').toLowerCase().includes(query) ||
-        (j.display_id || '').toLowerCase().includes(query) ||
-        (j.trade_type || '').toLowerCase().includes(query) ||
-        (j.description || '').toLowerCase().includes(query);
-    });
-  }
-
-  if (filtered.length === 0) {
-    list.innerHTML = '<div class="loading">No ' + activeTab.toLowerCase() + ' jobs</div>';
-    return;
-  }
-
-  list.innerHTML = filtered.map(function(j) {
-    const tab = (j.tab || '').toLowerCase();
-    const tagClass = 'tag-' + tab;
-    const dueClass = getDueClass(j.due_date);
-    const dueLabel = j.due_date ? 'Due: ' + j.due_date : '';
-    const desc = (j.description || '').substring(0, 80) + ((j.description||'').length > 80 ? '...' : '');
-    const postcode = j.postcode ? ' · ' + j.postcode : '';
-    const detailJson = JSON.stringify(j).replace(/"/g, '&quot;');
-    return '<div class="job-card" draggable="true" data-job-id="' + j.job_id + '" ondragstart="onJobDragStart(event, \'' + j.job_id + '\')" onclick="showDetail(' + detailJson + ')">' +
-      '<div><span class="tag ' + tagClass + '">' + tab.toUpperCase() + '</span><span class="job-id">' + (j.display_id || j.job_id) + '</span></div>' +
-      '<div class="job-site">' + (j.pub_name || '—') + '</div>' +
-      '<div class="job-trade">' + (j.trade_type || '') + postcode + '</div>' +
-      '<div class="job-desc">' + desc + '</div>' +
-      (dueLabel ? '<div class="job-due ' + dueClass + '">' + dueLabel + '</div>' : '') +
-      '</div>';
-  }).join('');
-}
-
-function filterJobs() { renderSidebar(); }
-
-function getDueClass(due) {
-  if (!due) return 'ok';
-  const d = new Date(due);
-  const today = new Date();
-  const diff = (d - today) / 86400000;
-  if (diff < 0) return 'overdue';
-  if (diff < 3) return 'soon';
-  return 'ok';
-}
-
-// ── Grid ──────────────────────────────────────────────────────────────────────
-function renderGrid() {
-  // Apply day off statuses
-  for (const [key, status] of Object.entries(dayStatuses)) {
-    const parts = key.split('_');
-    const date = parts[parts.length - 1];
-    const contractor = parts.slice(0, -1).join('_');
-    const slug = contractor.toLowerCase().replace(/ /g, '-');
-    const cell = document.getElementById(`cell-${slug}-${date}`);
-    if (cell) {
-      if (status === 'off') {
-        cell.classList.add('day-off');
-      } else {
-        cell.classList.remove('day-off');
-      }
-    }
-  }
-
-  // Clear all allocation cards first
-  document.querySelectorAll('.alloc-card').forEach(c => c.remove());
-
-  // Render allocations
-  const counts = {};
-  for (const a of allocations) {
-    const slug = a.contractor.toLowerCase().replace(/ /g, '-');
-    const cell = document.getElementById(`cell-${slug}-${a.day_date}`);
-    if (!cell) continue;
-
-    counts[a.contractor] = (counts[a.contractor] || 0) + 1;
-
-    const card = document.createElement('div');
-    card.className = 'alloc-card' + (a.is_survey ? ' is-survey' : '');
-    card.dataset.allocId = a.id;
-    const descPreview = (a.description || '').substring(0, 60) + ((a.description || '').length > 60 ? '...' : '');
-    const surveyLabel = a.is_survey ? ' <span style="color:#f4a261">📋 SURVEY</span>' : '';
-    card.innerHTML = '<button class="btn-remove" onclick="removeAllocation(' + a.id + ', event)">×</button>' +
-      '<div class="alloc-id">' + (a.display_id || a.job_id) + surveyLabel + '</div>' +
-      '<div class="alloc-site">' + (a.pub_name || '—') + '</div>' +
-      '<div class="alloc-desc">' + descPreview + '</div>' +
-      (a.notes ? '<div class="alloc-notes">' + a.notes + '</div>' : '') +
-      '<button class="btn-notes" onclick="openNotesModal(' + a.id + ', event)">✏ notes</button>';
-    card.addEventListener('click', function(e) {
-      if (e.target.classList.contains('btn-remove') || e.target.classList.contains('btn-notes')) return;
-      showDetailFromAlloc(a);
-    });
-    card.style.cursor = 'pointer';
-    const toggle = cell.querySelector('.day-off-toggle');
-    cell.insertBefore(card, toggle);
-  }
-
-  // Update contractor job counts
-  CONTRACTORS.forEach((c, i) => {
-    const el = document.getElementById(`count-${i}`);
-    if (el) el.textContent = `${counts[c] || 0} jobs`;
-  });
-}
-
-// ── Drag & Drop ───────────────────────────────────────────────────────────────
-function onJobDragStart(e, jobId) {
-  dragJobId = jobId;
-  dragAllocId = null;
-  e.dataTransfer.effectAllowed = 'move';
-  e.currentTarget.classList.add('dragging');
-  setTimeout(() => e.currentTarget.classList.remove('dragging'), 0);
-}
-
-function onDragOver(e) {
-  e.preventDefault();
-  e.currentTarget.classList.add('drag-over');
-}
-
-function onDragLeave(e) {
-  e.currentTarget.classList.remove('drag-over');
-}
-
-async function onDrop(e) {
-  e.preventDefault();
-  const cell = e.currentTarget;
-  cell.classList.remove('drag-over');
-
-  if (!dragJobId) return;
-
-  const contractor = cell.dataset.contractor;
-  const dayDate = cell.dataset.date;
-
-  const res = await fetch('/api/allocate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      week_start: WEEK_START,
-      job_id: dragJobId,
-      contractor,
-      day_date: dayDate,
-    })
-  });
-
-  const data = await res.json();
-  if (data.success) {
-    // Remove from unallocated
-    allJobs = allJobs.filter(j => j.job_id !== dragJobId);
-    // Add to allocations
-    await loadAllocations();
-    renderSidebar();
-    renderGrid();
-    dragJobId = null;
-  }
-}
-
-// ── Remove Allocation ─────────────────────────────────────────────────────────
-async function removeAllocation(allocId, e) {
-  e.stopPropagation();
-  const res = await fetch(`/api/allocate/${allocId}`, { method: 'DELETE' });
-  const data = await res.json();
-  if (data.success) {
-    await Promise.all([loadJobs(), loadAllocations()]);
-    renderSidebar();
-    renderGrid();
-  }
-}
-
-// ── Notes Modal ───────────────────────────────────────────────────────────────
-function openNotesModal(allocId, e) {
-  e.stopPropagation();
-  currentNotesAllocId = allocId;
-  const alloc = allocations.find(a => a.id === allocId);
-  document.getElementById('modal-notes').value = alloc ? (alloc.notes || '') : '';
-  document.getElementById('modal-survey').checked = alloc ? alloc.is_survey : false;
-  document.getElementById('notes-modal').classList.add('active');
-}
-
-function closeNotesModal() {
-  document.getElementById('notes-modal').classList.remove('active');
-  currentNotesAllocId = null;
-}
-
-async function saveNotes() {
-  if (!currentNotesAllocId) return;
-  const notes = document.getElementById('modal-notes').value;
-  const is_survey = document.getElementById('modal-survey').checked;
-
-  await fetch(`/api/allocate/${currentNotesAllocId}/notes`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ notes, is_survey })
-  });
-
-  // Update local state
-  const alloc = allocations.find(a => a.id === currentNotesAllocId);
-  if (alloc) { alloc.notes = notes; alloc.is_survey = is_survey; }
-
-  closeNotesModal();
-  renderGrid();
-}
-
-// ── Day Off Toggle ────────────────────────────────────────────────────────────
-async function toggleDayOff(contractor, date, btn) {
-  const key = `${contractor}_${date}`;
-  const current = dayStatuses[key] || 'available';
-  const newStatus = current === 'off' ? 'available' : 'off';
-
-  await fetch('/api/contractor-day', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ week_start: WEEK_START, contractor, day_date: date, status: newStatus })
-  });
-
-  dayStatuses[key] = newStatus;
-  renderGrid();
-}
-
-// ── Job Detail Panel ──────────────────────────────────────────────────────────
-function showDetailFromAlloc(a) {
-  showDetail({
-    job_id: a.job_id,
-    display_id: a.display_id,
-    pub_name: a.pub_name,
-    postcode: a.postcode,
-    tab_label: a.tab_label,
-    trade_type: a.trade_type,
-    due_date: a.due_date,
-    due_time: a.due_time,
-    description: a.description,
-  });
-}
-
-function showDetail(job) {
-  const panel = document.getElementById('job-detail');
-  document.getElementById('detail-title').textContent = job.display_id || job.job_id;
-  document.getElementById('detail-content').innerHTML = `
-    <div class="detail-row"><div class="label">Site</div><div class="value">${job.pub_name || '—'}</div></div>
-    <div class="detail-row"><div class="label">Postcode</div><div class="value">${job.postcode || '—'}</div></div>
-    <div class="detail-row"><div class="label">Type</div><div class="value">${job.tab_label || job.tab}</div></div>
-    <div class="detail-row"><div class="label">Trade</div><div class="value">${job.trade_type || '—'}</div></div>
-    <div class="detail-row"><div class="label">Due</div><div class="value">${job.due_date || '—'} ${job.due_time || ''}</div></div>
-    <div class="detail-row"><div class="label">Description</div><div class="value">${job.description || '—'}</div></div>
-  `;
-  panel.classList.add('active');
-}
-
-function closeDetail() {
-  document.getElementById('job-detail').classList.remove('active');
-}
-
-// Close modal on overlay click
-document.getElementById('notes-modal').addEventListener('click', function(e) {
-  if (e.target === this) closeNotesModal();
-});
-</script>
-</body>
-</html>
+"""
+Redstone PDM - Planning & Allocation Tool
+==========================================
+Module 2: Weekly planning board for job allocation to contractors.
+Reads from the wisdom-sync PostgreSQL database.
+"""
+
+import os
+import json
+import psycopg2
+import psycopg2.extras
+from datetime import datetime, date, timedelta
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session
+from functools import wraps
+
+app = Flask(__name__, template_folder=".")
+app.secret_key = os.environ.get("SECRET_KEY", "redstone-pdm-2024")
+
+DATABASE_URL = os.environ["DATABASE_URL"]
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "redstone2024")
+
+CONTRACTORS = [
+    "Ashley Everett",
+    "Dave Lefevre",
+    "Mark Ashpool",
+    "Aziz Rehman",
+    "Dave Duppa",
+    "Richard Chambers",
+    "Cassius Kwarteng",
+    "James Rutland",
+    "Dwain Hinze",
+    "Ajax Smartfit",
+]
+
+# ── Database ──────────────────────────────────────────────────────────────────
+
+def get_db():
+    return psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
+
+
+def init_db():
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS allocations (
+            id              SERIAL PRIMARY KEY,
+            week_start      DATE NOT NULL,
+            job_id          TEXT NOT NULL,
+            contractor      TEXT NOT NULL,
+            day_date        DATE NOT NULL,
+            notes           TEXT DEFAULT '',
+            is_survey       BOOLEAN DEFAULT FALSE,
+            sort_order      INTEGER DEFAULT 0,
+            created_at      TIMESTAMPTZ DEFAULT NOW(),
+            updated_at      TIMESTAMPTZ DEFAULT NOW()
+        );
+
+        ALTER TABLE allocations DROP CONSTRAINT IF EXISTS allocations_week_start_job_id_contractor_day_date_key;
+
+        CREATE TABLE IF NOT EXISTS contractor_days (
+            id              SERIAL PRIMARY KEY,
+            week_start      DATE NOT NULL,
+            contractor      TEXT NOT NULL,
+            day_date        DATE NOT NULL,
+            status          TEXT DEFAULT 'available',
+            UNIQUE(week_start, contractor, day_date)
+        );
+
+        CREATE TABLE IF NOT EXISTS published_weeks (
+            week_start      DATE PRIMARY KEY,
+            published_at    TIMESTAMPTZ DEFAULT NOW(),
+            published_by    TEXT DEFAULT 'admin'
+        );
+    """)
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
+# ── Auth ──────────────────────────────────────────────────────────────────────
+
+def login_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not session.get("logged_in"):
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
+    return decorated
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    error = None
+    if request.method == "POST":
+        if request.form.get("password") == ADMIN_PASSWORD:
+            session["logged_in"] = True
+            return redirect(url_for("planner"))
+        error = "Incorrect password"
+    return render_template("login.html", error=error)
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
+
+
+# ── Helper Functions ──────────────────────────────────────────────────────────
+
+def get_week_dates(week_start):
+    """Return list of 7 dates for the week starting on week_start."""
+    start = datetime.strptime(week_start, "%Y-%m-%d").date()
+    return [start + timedelta(days=i) for i in range(7)]
+
+
+def get_current_week_start():
+    """Return the Monday of the current week."""
+    today = date.today()
+    return today - timedelta(days=today.weekday())
+
+
+# ── Main Planner ──────────────────────────────────────────────────────────────
+
+@app.route("/")
+@login_required
+def planner():
+    week_start_str = request.args.get("week", get_current_week_start().strftime("%Y-%m-%d"))
+    week_start = datetime.strptime(week_start_str, "%Y-%m-%d").date()
+    week_dates = [week_start + timedelta(days=i) for i in range(7)]
+
+    prev_week = (week_start - timedelta(days=7)).strftime("%Y-%m-%d")
+    next_week = (week_start + timedelta(days=7)).strftime("%Y-%m-%d")
+
+    return render_template(
+        "planner.html",
+        contractors=CONTRACTORS,
+        week_start=week_start_str,
+        week_dates=week_dates,
+        prev_week=prev_week,
+        next_week=next_week,
+    )
+
+
+# ── API: Jobs ─────────────────────────────────────────────────────────────────
+
+@app.route("/api/jobs/unallocated")
+@login_required
+def api_unallocated_jobs():
+    week_start = request.args.get("week", get_current_week_start().strftime("%Y-%m-%d"))
+    conn = get_db()
+    cur = conn.cursor()
+
+    # Get all active jobs not yet allocated this week
+    cur.execute("""
+        SELECT j.job_id, j.display_id, j.tab, j.tab_label, j.pub_name,
+               j.location_code, j.postcode, j.trade_type, j.sub_trade_type,
+               j.description, j.due_date, j.due_time, j.status
+        FROM jobs j
+        WHERE j.tab IN ('CALLOUT', 'QUOTEREQUEST', 'QUOTE', 'MIV', 'PPM')
+        ORDER BY j.due_date ASC NULLS LAST, j.tab ASC, j.pub_name ASC
+    """, ())
+
+    jobs = [dict(r) for r in cur.fetchall()]
+    cur.close()
+    conn.close()
+    return jsonify(jobs)
+
+
+@app.route("/api/jobs/allocated")
+@login_required
+def api_allocated_jobs():
+    week_start = request.args.get("week", get_current_week_start().strftime("%Y-%m-%d"))
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT a.id, a.job_id, a.contractor, a.day_date, a.notes, a.is_survey, a.sort_order,
+               j.display_id, j.tab, j.tab_label, j.pub_name, j.location_code,
+               j.postcode, j.trade_type, j.description, j.due_date, j.due_time
+        FROM allocations a
+        JOIN jobs j ON j.job_id = a.job_id
+        WHERE a.week_start = %s
+        ORDER BY a.contractor, a.day_date, a.sort_order
+    """, (week_start,))
+
+    allocations = [dict(r) for r in cur.fetchall()]
+    # Convert dates to strings
+    for a in allocations:
+        if a.get("day_date"):
+            a["day_date"] = a["day_date"].isoformat()
+        if a.get("due_date"):
+            a["due_date"] = str(a["due_date"])
+    cur.close()
+    conn.close()
+    return jsonify(allocations)
+
+
+# ── API: Allocations ──────────────────────────────────────────────────────────
+
+@app.route("/api/allocate", methods=["POST"])
+@login_required
+def api_allocate():
+    data = request.json
+    week_start = data["week_start"]
+    job_id = data["job_id"]
+    contractor = data["contractor"]
+    day_date = data["day_date"]
+    notes = data.get("notes", "")
+    is_survey = data.get("is_survey", False)
+
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        cur.execute("""
+            INSERT INTO allocations (week_start, job_id, contractor, day_date, notes, is_survey)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            RETURNING id
+        """, (week_start, job_id, contractor, day_date, notes, is_survey))
+        result = cur.fetchone()
+        conn.commit()
+        return jsonify({"success": True, "id": result["id"]})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+
+@app.route("/api/allocate/<int:allocation_id>", methods=["DELETE"])
+@login_required
+def api_deallocate(allocation_id):
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        cur.execute("DELETE FROM allocations WHERE id = %s", (allocation_id,))
+        conn.commit()
+        return jsonify({"success": True})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+
+@app.route("/api/allocate/<int:allocation_id>/notes", methods=["PATCH"])
+@login_required
+def api_update_notes(allocation_id):
+    data = request.json
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        cur.execute("""
+            UPDATE allocations SET notes=%s, updated_at=NOW() WHERE id=%s
+        """, (data.get("notes", ""), allocation_id))
+        conn.commit()
+        return jsonify({"success": True})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+
+@app.route("/api/contractor-day", methods=["POST"])
+@login_required
+def api_set_contractor_day():
+    data = request.json
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        cur.execute("""
+            INSERT INTO contractor_days (week_start, contractor, day_date, status)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (week_start, contractor, day_date)
+            DO UPDATE SET status=%s
+        """, (data["week_start"], data["contractor"], data["day_date"],
+              data["status"], data["status"]))
+        conn.commit()
+        return jsonify({"success": True})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+
+@app.route("/api/contractor-days")
+@login_required
+def api_get_contractor_days():
+    week_start = request.args.get("week")
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT contractor, day_date, status
+        FROM contractor_days WHERE week_start=%s
+    """, (week_start,))
+    rows = cur.fetchall()
+    result = {}
+    for r in rows:
+        key = f"{r['contractor']}_{r['day_date'].isoformat()}"
+        result[key] = r["status"]
+    cur.close()
+    conn.close()
+    return jsonify(result)
+
+
+# ── Contractor View ───────────────────────────────────────────────────────────
+
+@app.route("/week/<contractor_slug>")
+def contractor_week(contractor_slug):
+    week_start = request.args.get("week", get_current_week_start().strftime("%Y-%m-%d"))
+
+    # Match contractor name from slug
+    contractor = None
+    for c in CONTRACTORS:
+        if c.lower().replace(" ", "-") == contractor_slug:
+            contractor = c
+            break
+
+    if not contractor:
+        return "Contractor not found", 404
+
+    week_start_date = datetime.strptime(week_start, "%Y-%m-%d").date()
+    week_dates = [week_start_date + timedelta(days=i) for i in range(7)]
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT a.id, a.job_id, a.contractor, a.day_date, a.notes, a.is_survey,
+               j.display_id, j.tab_label, j.pub_name, j.location_code,
+               j.postcode, j.trade_type, j.description, j.due_time
+        FROM allocations a
+        JOIN jobs j ON j.job_id = a.job_id
+        WHERE a.week_start=%s AND a.contractor=%s
+        ORDER BY a.day_date, a.is_survey, a.sort_order
+    """, (week_start, contractor))
+
+    allocations = [dict(r) for r in cur.fetchall()]
+
+    cur.execute("""
+        SELECT day_date, status FROM contractor_days
+        WHERE week_start=%s AND contractor=%s
+    """, (week_start, contractor))
+    day_statuses = {r["day_date"]: r["status"] for r in cur.fetchall()}
+
+    cur.close()
+    conn.close()
+
+    # Group by day
+    by_day = {}
+    for d in week_dates:
+        by_day[d] = [a for a in allocations if a["day_date"] == d]
+
+    prev_week = (week_start_date - timedelta(days=7)).strftime("%Y-%m-%d")
+    next_week = (week_start_date + timedelta(days=7)).strftime("%Y-%m-%d")
+
+    return render_template(
+        "contractor.html",
+        contractor=contractor,
+        week_start=week_start,
+        week_dates=week_dates,
+        by_day=by_day,
+        day_statuses=day_statuses,
+        prev_week=prev_week,
+        next_week=next_week,
+        contractor_slug=contractor_slug,
+    )
+
+
+# Run init_db when module loads (works with both gunicorn and direct execution)
+try:
+    init_db()
+except Exception as e:
+    print(f"Warning: init_db failed: {e}")
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)
