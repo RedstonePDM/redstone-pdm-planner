@@ -80,6 +80,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .alloc-card .btn-remove { position: absolute; top: 4px; right: 4px; background: none; border: none; color: #ccc; cursor: pointer; font-size: 14px; line-height: 1; padding: 0 2px; }
 .alloc-card .btn-remove:hover { color: #e63946; }
 .alloc-card .btn-notes { background: none; border: none; color: #aaa; cursor: pointer; font-size: 10px; padding: 0; margin-top: 2px; }
+.alloc-card .alloc-desc { font-size: 10px; color: #555; margin-top: 2px; line-height: 1.3; }
 .alloc-card .btn-notes:hover { color: #1a1a2e; }
 
 /* Day off toggle */
@@ -380,17 +381,21 @@ function renderGrid() {
     counts[a.contractor] = (counts[a.contractor] || 0) + 1;
 
     const card = document.createElement('div');
-    card.className = `alloc-card${a.is_survey ? ' is-survey' : ''}`;
+    card.className = 'alloc-card' + (a.is_survey ? ' is-survey' : '');
     card.dataset.allocId = a.id;
-    card.innerHTML = `
-      <button class="btn-remove" onclick="removeAllocation(${a.id}, event)">×</button>
-      <div class="alloc-id">${a.display_id || a.job_id}</div>
-      <div class="alloc-site">${a.pub_name || '—'}</div>
-      <div class="alloc-trade">${a.trade_type || ''}${a.is_survey ? ' 📋 SURVEY' : ''}</div>
-      ${a.notes ? `<div class="alloc-notes">${a.notes}</div>` : ''}
-      <button class="btn-notes" onclick="openNotesModal(${a.id}, event)">✏ notes</button>
-    `;
-    // Insert before the day-off toggle
+    const descPreview = (a.description || '').substring(0, 60) + ((a.description || '').length > 60 ? '...' : '');
+    const surveyLabel = a.is_survey ? ' <span style="color:#f4a261">📋 SURVEY</span>' : '';
+    card.innerHTML = '<button class="btn-remove" onclick="removeAllocation(' + a.id + ', event)">×</button>' +
+      '<div class="alloc-id">' + (a.display_id || a.job_id) + surveyLabel + '</div>' +
+      '<div class="alloc-site">' + (a.pub_name || '—') + '</div>' +
+      '<div class="alloc-desc">' + descPreview + '</div>' +
+      (a.notes ? '<div class="alloc-notes">' + a.notes + '</div>' : '') +
+      '<button class="btn-notes" onclick="openNotesModal(' + a.id + ', event)">✏ notes</button>';
+    card.addEventListener('click', function(e) {
+      if (e.target.classList.contains('btn-remove') || e.target.classList.contains('btn-notes')) return;
+      showDetailFromAlloc(a);
+    });
+    card.style.cursor = 'pointer';
     const toggle = cell.querySelector('.day-off-toggle');
     cell.insertBefore(card, toggle);
   }
@@ -516,6 +521,20 @@ async function toggleDayOff(contractor, date, btn) {
 }
 
 // ── Job Detail Panel ──────────────────────────────────────────────────────────
+function showDetailFromAlloc(a) {
+  showDetail({
+    job_id: a.job_id,
+    display_id: a.display_id,
+    pub_name: a.pub_name,
+    postcode: a.postcode,
+    tab_label: a.tab_label,
+    trade_type: a.trade_type,
+    due_date: a.due_date,
+    due_time: a.due_time,
+    description: a.description,
+  });
+}
+
 function showDetail(job) {
   const panel = document.getElementById('job-detail');
   document.getElementById('detail-title').textContent = job.display_id || job.job_id;
