@@ -225,6 +225,8 @@ let dragJobId = null;
 let dragAllocId = null;
 let currentNotesAllocId = null;
 let dayStatuses = {};
+let activeTab = 'CALLOUT';
+let activeTab = 'CALLOUT';
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
@@ -254,41 +256,71 @@ async function loadDayStatuses() {
 }
 
 // ── Sidebar ───────────────────────────────────────────────────────────────────
+function setTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  renderSidebar();
+}
+
 function renderSidebar() {
   const list = document.getElementById('job-list');
   const query = document.getElementById('search-input').value.toLowerCase();
-  const filtered = allJobs.filter(j =>
-    !query ||
-    (j.pub_name || '').toLowerCase().includes(query) ||
-    (j.display_id || '').toLowerCase().includes(query) ||
-    (j.trade_type || '').toLowerCase().includes(query) ||
-    (j.description || '').toLowerCase().includes(query)
-  );
+
+  const tabMap = {
+    'CALLOUT': ['CALLOUT'],
+    'QUOTE': ['QUOTE'],
+    'MIV': ['MIV'],
+    'PPM': ['PPM'],
+    'QUOTEREQUEST': ['QUOTEREQUEST'],
+  };
+  const allowedTabs = tabMap[activeTab] || [activeTab];
+
+  // Update tab counts
+  ['CALLOUT','QUOTE','MIV','PPM','QUOTEREQUEST'].forEach(function(t) {
+    const tabs = tabMap[t] || [t];
+    const count = allJobs.filter(function(j){ return tabs.includes(j.tab); }).length;
+    const el = document.getElementById('stab-count-' + t);
+    if (el) el.textContent = count;
+  });
 
   document.getElementById('unallocated-count').textContent = allJobs.length;
 
+  let filtered = allJobs.filter(function(j){ return allowedTabs.includes(j.tab); });
+
+  if (activeTab === 'PPM') {
+    filtered = filtered.slice(0, 10);
+  }
+
+  if (query) {
+    filtered = filtered.filter(function(j) {
+      return (j.pub_name || '').toLowerCase().includes(query) ||
+        (j.display_id || '').toLowerCase().includes(query) ||
+        (j.trade_type || '').toLowerCase().includes(query) ||
+        (j.description || '').toLowerCase().includes(query);
+    });
+  }
+
   if (filtered.length === 0) {
-    list.innerHTML = '<div class="loading">No jobs found</div>';
+    list.innerHTML = '<div class="loading">No ' + activeTab.toLowerCase() + ' jobs</div>';
     return;
   }
 
-  list.innerHTML = filtered.map(j => {
+  list.innerHTML = filtered.map(function(j) {
     const tab = (j.tab || '').toLowerCase();
-    const tagClass = `tag-${tab}`;
-    const tagLabel = j.tab_label || j.tab;
+    const tagClass = 'tag-' + tab;
     const dueClass = getDueClass(j.due_date);
-    const dueLabel = j.due_date ? `Due: ${j.due_date}` : '';
-    return `
-      <div class="job-card" draggable="true"
-        data-job-id="${j.job_id}"
-        ondragstart="onJobDragStart(event, '${j.job_id}')"
-        onclick="showDetail(${JSON.stringify(j).replace(/"/g, '&quot;')})">
-        <div><span class="tag ${tagClass}">${tab.toUpperCase()}</span><span class="job-id">${j.display_id || j.job_id}</span></div>
-        <div class="job-site">${j.pub_name || '—'}</div>
-        <div class="job-trade">${j.trade_type || ''} ${j.postcode ? '· ' + j.postcode : ''}</div>
-        <div class="job-desc">${(j.description || '').substring(0, 80)}${(j.description||'').length > 80 ? '…' : ''}</div>
-        ${dueLabel ? `<div class="job-due ${dueClass}">${dueLabel}</div>` : ''}
-      </div>`;
+    const dueLabel = j.due_date ? 'Due: ' + j.due_date : '';
+    const desc = (j.description || '').substring(0, 80) + ((j.description||'').length > 80 ? '...' : '');
+    const postcode = j.postcode ? ' · ' + j.postcode : '';
+    const detailJson = JSON.stringify(j).replace(/"/g, '&quot;');
+    return '<div class="job-card" draggable="true" data-job-id="' + j.job_id + '" ondragstart="onJobDragStart(event, \'' + j.job_id + '\')" onclick="showDetail(' + detailJson + ')">' +
+      '<div><span class="tag ' + tagClass + '">' + tab.toUpperCase() + '</span><span class="job-id">' + (j.display_id || j.job_id) + '</span></div>' +
+      '<div class="job-site">' + (j.pub_name || '—') + '</div>' +
+      '<div class="job-trade">' + (j.trade_type || '') + postcode + '</div>' +
+      '<div class="job-desc">' + desc + '</div>' +
+      (dueLabel ? '<div class="job-due ' + dueClass + '">' + dueLabel + '</div>' : '') +
+      '</div>';
   }).join('');
 }
 
