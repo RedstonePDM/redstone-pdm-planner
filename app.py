@@ -52,9 +52,10 @@ def init_db():
             is_survey       BOOLEAN DEFAULT FALSE,
             sort_order      INTEGER DEFAULT 0,
             created_at      TIMESTAMPTZ DEFAULT NOW(),
-            updated_at      TIMESTAMPTZ DEFAULT NOW(),
-            UNIQUE(week_start, job_id, contractor, day_date)
+            updated_at      TIMESTAMPTZ DEFAULT NOW()
         );
+
+        ALTER TABLE allocations DROP CONSTRAINT IF EXISTS allocations_week_start_job_id_contractor_day_date_key;
 
         CREATE TABLE IF NOT EXISTS contractor_days (
             id              SERIAL PRIMARY KEY,
@@ -156,11 +157,8 @@ def api_unallocated_jobs():
                j.description, j.due_date, j.due_time, j.status
         FROM jobs j
         WHERE j.tab IN ('CALLOUT', 'QUOTEREQUEST', 'QUOTE', 'MIV', 'PPM')
-        AND j.job_id NOT IN (
-            SELECT DISTINCT job_id FROM allocations WHERE week_start = %s
-        )
         ORDER BY j.due_date ASC NULLS LAST, j.tab ASC, j.pub_name ASC
-    """, (week_start,))
+    """, ())
 
     jobs = [dict(r) for r in cur.fetchall()]
     cur.close()
@@ -216,10 +214,8 @@ def api_allocate():
         cur.execute("""
             INSERT INTO allocations (week_start, job_id, contractor, day_date, notes, is_survey)
             VALUES (%s, %s, %s, %s, %s, %s)
-            ON CONFLICT (week_start, job_id, contractor, day_date)
-            DO UPDATE SET notes=%s, is_survey=%s, updated_at=NOW()
             RETURNING id
-        """, (week_start, job_id, contractor, day_date, notes, is_survey, notes, is_survey))
+        """, (week_start, job_id, contractor, day_date, notes, is_survey))
         result = cur.fetchone()
         conn.commit()
         return jsonify({"success": True, "id": result["id"]})
