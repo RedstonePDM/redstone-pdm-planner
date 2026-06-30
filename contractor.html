@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ contractor }} – Week {{ week_start }}</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; color: #1a1a2e; }
+
+.header { background: #1a1a2e; color: white; padding: 14px 16px; }
+.header h1 { font-size: 18px; font-weight: 700; }
+.header .dot { color: #e63946; }
+.header .subtitle { font-size: 13px; color: rgba(255,255,255,0.6); margin-top: 2px; }
+.week-nav { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+.week-nav a { color: white; text-decoration: none; background: rgba(255,255,255,0.15); padding: 6px 12px; border-radius: 6px; font-size: 13px; }
+.week-nav .label { font-size: 13px; font-weight: 600; flex: 1; text-align: center; }
+
+.content { padding: 12px; max-width: 600px; margin: 0 auto; }
+
+.day-card { background: white; border-radius: 10px; margin-bottom: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+.day-header { padding: 12px 16px; background: #1a1a2e; color: white; display: flex; align-items: center; justify-content: space-between; }
+.day-header .day-name { font-size: 15px; font-weight: 700; }
+.day-header .day-date { font-size: 12px; color: rgba(255,255,255,0.6); }
+.day-header.today { background: #e63946; }
+.day-header.off-day { background: #888; }
+
+.day-body { padding: 0; }
+
+.no-jobs { padding: 16px; color: #aaa; font-size: 13px; text-align: center; }
+.off-label { padding: 16px; color: #aaa; font-size: 13px; text-align: center; font-weight: 600; letter-spacing: 1px; }
+
+.job-item { padding: 14px 16px; border-bottom: 1px solid #f0f0f0; }
+.job-item:last-child { border-bottom: none; }
+.job-item.is-survey { border-left: 4px solid #f4a261; background: #fffaf5; }
+
+.job-top { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 6px; }
+.job-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+.badge-callout { background: #fff0f0; color: #e63946; }
+.badge-quote { background: #e8f4fd; color: #2196f3; }
+.badge-quoterequest { background: #fff8e1; color: #f57c00; }
+.badge-miv { background: #f3e5f5; color: #9c27b0; }
+.badge-ppm { background: #e8f5e9; color: #388e3c; }
+.badge-survey { background: #fff3e0; color: #e65100; }
+
+.job-number { font-size: 11px; color: #aaa; font-family: monospace; margin-left: auto; }
+
+.job-site { font-size: 16px; font-weight: 700; color: #1a1a2e; margin-bottom: 3px; }
+.job-postcode { font-size: 12px; color: #888; margin-bottom: 6px; }
+.job-trade { font-size: 12px; color: #555; margin-bottom: 6px; }
+
+.job-desc { font-size: 13px; color: #333; line-height: 1.5; background: #f8f8f8; border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; }
+
+.job-notes { font-size: 13px; color: #e63946; background: #fff5f5; border-radius: 6px; padding: 10px 12px; border-left: 3px solid #e63946; line-height: 1.5; }
+.job-notes-label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #e63946; margin-bottom: 4px; letter-spacing: 0.5px; }
+
+.job-due { font-size: 11px; color: #888; margin-top: 6px; }
+
+.summary-bar { background: white; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); display: flex; gap: 20px; }
+.summary-item { text-align: center; }
+.summary-item .num { font-size: 22px; font-weight: 700; color: #1a1a2e; }
+.summary-item .lbl { font-size: 11px; color: #888; margin-top: 2px; }
+
+.footer { text-align: center; padding: 20px; color: #aaa; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Redstone<span class="dot">.</span>PDM</h1>
+  <div class="subtitle">{{ contractor }}</div>
+  <div class="week-nav">
+    <a href="/week/{{ contractor_slug }}?week={{ prev_week }}">← Prev</a>
+    <span class="label">w/c {{ week_dates[0].strftime('%d %b %Y') }}</span>
+    <a href="/week/{{ contractor_slug }}?week={{ next_week }}">Next →</a>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- Summary -->
+  {% set total_jobs = namespace(n=0) %}
+  {% set total_surveys = namespace(n=0) %}
+  {% for day in week_dates %}
+    {% for a in by_day[day] %}
+      {% if a.is_survey %}{% set total_surveys.n = total_surveys.n + 1 %}{% else %}{% set total_jobs.n = total_jobs.n + 1 %}{% endif %}
+    {% endfor %}
+  {% endfor %}
+
+  <div class="summary-bar" style="margin-top:12px;">
+    <div class="summary-item">
+      <div class="num">{{ total_jobs.n }}</div>
+      <div class="lbl">Jobs</div>
+    </div>
+    <div class="summary-item">
+      <div class="num">{{ total_surveys.n }}</div>
+      <div class="lbl">Surveys</div>
+    </div>
+  </div>
+
+  <!-- Days -->
+  {% for day in week_dates %}
+  {% set day_str = day.strftime('%Y-%m-%d') %}
+  {% set is_today = day == today %}
+  {% set status = day_statuses.get(day, 'available') %}
+  {% set jobs = by_day[day] %}
+
+  <div class="day-card">
+    <div class="day-header {% if is_today %}today{% elif status == 'off' %}off-day{% endif %}">
+      <span class="day-name">{{ day.strftime('%A') }}</span>
+      <span class="day-date">{{ day.strftime('%d %b') }}</span>
+    </div>
+    <div class="day-body">
+      {% if status == 'off' %}
+        <div class="off-label">DAY OFF</div>
+      {% elif jobs %}
+        {% for a in jobs %}
+        <div class="job-item {% if a.is_survey %}is-survey{% endif %}">
+          <div class="job-top">
+            {% if a.is_survey %}
+              <span class="job-badge badge-survey">📋 SURVEY</span>
+            {% else %}
+              <span class="job-badge badge-{{ (a.tab_label or '').split(' ')[0].lower() }}">{{ (a.tab_label or 'JOB').split(' - ')[0].upper() }}</span>
+            {% endif %}
+            <span class="job-number">{{ a.display_id or a.job_id }}</span>
+          </div>
+          <div class="job-site">{{ a.pub_name or '—' }}</div>
+          {% if a.postcode %}<div class="job-postcode">📍 {{ a.postcode }}</div>{% endif %}
+          {% if a.trade_type %}<div class="job-trade">🔧 {{ a.trade_type }}</div>{% endif %}
+          {% if a.description %}
+          <div class="job-desc">{{ a.description }}</div>
+          {% endif %}
+          {% if a.notes %}
+          <div class="job-notes">
+            <div class="job-notes-label">Notes from office</div>
+            {{ a.notes }}
+          </div>
+          {% endif %}
+          {% if a.due_time %}<div class="job-due">⏰ Due by {{ a.due_time }}</div>{% endif %}
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="no-jobs">No jobs scheduled</div>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+
+</div>
+
+<div class="footer">Redstone PDM · {{ week_dates[0].strftime('%d %b') }} – {{ week_dates[6].strftime('%d %b %Y') }}</div>
+
+</body>
+</html>
