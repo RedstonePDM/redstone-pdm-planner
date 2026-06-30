@@ -376,7 +376,12 @@ def contractor_week(contractor_slug):
     )
 
 
-if __name__ == "__main__":
+# Run init_db when module loads (works with both gunicorn and direct execution)
+try:
     init_db()
+except Exception as e:
+    print(f"Warning: init_db failed: {e}")
+
+if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
