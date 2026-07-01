@@ -92,6 +92,17 @@ def init_db():
             revision_count  INTEGER DEFAULT 0,
             published_by    TEXT DEFAULT 'admin'
         );
+
+        CREATE TABLE IF NOT EXISTS week_schedules (
+            id              SERIAL PRIMARY KEY,
+            week_commencing DATE UNIQUE NOT NULL,
+            status          TEXT DEFAULT 'draft',
+            published_at    TIMESTAMPTZ,
+            published_by    TEXT,
+            reopened_at     TIMESTAMPTZ,
+            notes           TEXT,
+            created_at      TIMESTAMPTZ DEFAULT NOW()
+        );
     """)
 
     # Add status/revision columns if upgrading from old schema
@@ -357,10 +368,24 @@ def api_publish():
             ON CONFLICT (week_start) DO UPDATE
             SET status='published', published_at=NOW(), revision_count=%s
         """, (week_start, rev_count, rev_count))
+
+        # Also write to week_schedules table (read by jobcard app for contractor dashboard)
+        try:
+            cur.execute("""
+                INSERT INTO week_schedules (week_commencing, status, published_at, published_by)
+                VALUES (%s, 'published', NOW(), 'admin')
+                ON CONFLICT (week_commencing) DO UPDATE
+                SET status='published', published_at=NOW()
+            """, (week_start,))
+        except Exception as e:
+            print(f"week_schedules upsert failed (may not exist yet): {e}")
+            conn.rollback()
+
         conn.commit()
 
         # Send emails
         sent = send_schedule_emails(week_start, is_revision=is_revision)
+        print(f"Publish complete: sent={sent}, is_revision={is_revision}, week={week_start}")
 
         return jsonify({
             "success": True,
@@ -390,6 +415,16 @@ def api_reopen():
             ON CONFLICT (week_start) DO UPDATE
             SET status='draft', reopened_at=NOW()
         """, (week_start,))
+        # Also update week_schedules
+        try:
+            cur.execute("""
+                INSERT INTO week_schedules (week_commencing, status)
+                VALUES (%s, 'draft')
+                ON CONFLICT (week_commencing) DO UPDATE SET status='draft'
+            """, (week_start,))
+        except Exception as e:
+            print(f"week_schedules reopen failed: {e}")
+            conn.rollback()
         conn.commit()
         return jsonify({"success": True})
     except Exception as e:
