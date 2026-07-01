@@ -24,6 +24,8 @@ ADMIN_PASSWORD  = os.environ.get("ADMIN_PASSWORD", "redstone2024")
 SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY", "")
 FROM_EMAIL      = os.environ.get("FROM_EMAIL", "info@redstonepdm.com")
 JOBCARD_URL     = os.environ.get("JOBCARD_URL", "https://redstone-pdm-jobcard-production.up.railway.app")
+TEST_MODE       = os.environ.get("TEST_MODE", "false").lower() == "true"
+TEST_EMAIL      = os.environ.get("TEST_EMAIL", "dave@redstonepdm.com")
 
 CONTRACTORS = [
     "Ashley Everett",
@@ -153,6 +155,10 @@ def send_email(to_address, subject, body_html):
         print(f"No SendGrid key — skipping email to {to_address}")
         return False
     try:
+        if TEST_MODE:
+            print(f"TEST MODE: redirecting email (was to {to_address}) to {TEST_EMAIL}")
+            subject = f"[TEST] {subject}"
+            to_address = TEST_EMAIL
         message = Mail(
             from_email=FROM_EMAIL,
             to_emails=to_address,
