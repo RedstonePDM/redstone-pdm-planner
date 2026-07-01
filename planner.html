@@ -19,7 +19,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .btn-logout { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 12px; }
 
 /* Layout */
-.layout { display: flex; height: calc(100vh - 52px); }
+.layout { display: flex; height: calc(100vh - 52px - 64px); } /* leave room for publish bar */
 
 /* Sidebar */
 .sidebar { width: 280px; min-width: 280px; background: white; border-right: 1px solid #e0e0e0; display: flex; flex-direction: column; }
@@ -50,27 +50,23 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .grid-wrapper { flex: 1; overflow: auto; }
 .grid { min-width: max-content; }
 
-/* Grid header */
 .grid-head { display: grid; position: sticky; top: 0; z-index: 50; background: white; border-bottom: 2px solid #e0e0e0; box-shadow: 0 2px 4px rgba(0,0,0,0.06); }
 .grid-head .corner { width: 110px; min-width: 110px; padding: 10px 8px; font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; }
 .grid-head .col-head { padding: 8px 10px; min-width: 170px; border-left: 1px solid #e8e8e8; }
 .col-head .name { font-size: 12px; font-weight: 700; color: #1a1a2e; }
 .col-head .job-count { font-size: 10px; color: #888; margin-top: 1px; }
 
-/* Day rows */
 .day-row { display: grid; border-bottom: 1px solid #e8e8e8; }
 .day-label { width: 110px; min-width: 110px; padding: 8px; background: white; border-right: 2px solid #e0e0e0; position: sticky; left: 0; z-index: 10; }
 .day-label .day-name { font-size: 12px; font-weight: 700; color: #1a1a2e; }
 .day-label .day-date { font-size: 10px; color: #888; }
 .day-label.today .day-name { color: #e63946; }
 
-/* Cells */
 .cell { min-width: 170px; min-height: 80px; padding: 6px; border-left: 1px solid #e8e8e8; background: #fafafa; vertical-align: top; position: relative; transition: background 0.15s; }
 .cell.drag-over { background: #e8f4fd; border: 2px dashed #2196f3; }
 .cell.day-off { background: #f5f5f5; }
 .cell.day-off::after { content: 'OFF'; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 10px; font-weight: 700; color: #ccc; letter-spacing: 2px; }
 
-/* Allocated cards */
 .alloc-card { background: white; border: 1.5px solid #e0e0e0; border-radius: 5px; padding: 6px 8px; margin-bottom: 4px; position: relative; }
 .alloc-card.is-survey { border-left: 3px solid #f4a261; background: #fffaf5; }
 .alloc-card .alloc-id { font-size: 10px; color: #888; font-family: monospace; }
@@ -83,13 +79,46 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .alloc-card .alloc-desc { font-size: 10px; color: #555; margin-top: 2px; line-height: 1.3; }
 .alloc-card .btn-notes:hover { color: #1a1a2e; }
 
-/* Day off toggle */
 .day-off-toggle { position: absolute; bottom: 4px; right: 4px; }
 .day-off-toggle button { background: none; border: 1px solid #e0e0e0; border-radius: 4px; font-size: 9px; padding: 2px 5px; cursor: pointer; color: #aaa; }
 .day-off-toggle button:hover { background: #f5f5f5; color: #666; }
 
+/* ── Publish Bar ── */
+.publish-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; height: 64px;
+  background: #1a1a2e; border-top: 3px solid #c0392b;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; z-index: 200;
+  box-shadow: 0 -4px 16px rgba(0,0,0,0.2);
+}
+.publish-bar-left { display: flex; align-items: center; gap: 16px; }
+.publish-status-pill {
+  padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
+}
+.publish-status-pill.draft     { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.7); }
+.publish-status-pill.published { background: #1a7a4a; color: white; }
+.publish-label { color: rgba(255,255,255,0.6); font-size: 12px; }
+.revision-note { color: #f4a261; font-size: 11px; font-style: italic; }
+
+.publish-bar-right { display: flex; gap: 10px; align-items: center; }
+
+.btn-publish {
+  padding: 10px 24px; border-radius: 8px; font-size: 13px; font-weight: 700;
+  cursor: pointer; border: none; background: #c0392b; color: white;
+  transition: background 0.15s;
+}
+.btn-publish:hover { background: #a93226; }
+.btn-publish:disabled { background: #555; color: #999; cursor: not-allowed; }
+
+.btn-reopen {
+  padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  cursor: pointer; border: 1.5px solid rgba(255,255,255,0.2); background: transparent; color: rgba(255,255,255,0.8);
+  transition: all 0.15s;
+}
+.btn-reopen:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.4); }
+
 /* Modal */
-.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center; }
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300; align-items: center; justify-content: center; }
 .modal-overlay.active { display: flex; }
 .modal { background: white; border-radius: 10px; padding: 24px; width: 440px; max-width: 95vw; }
 .modal h3 { font-size: 15px; font-weight: 700; margin-bottom: 16px; }
@@ -104,8 +133,17 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .btn-secondary:hover { background: #e0e0e0; }
 .modal-check { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 13px; }
 
+/* Confirm modal */
+.confirm-modal { background: white; border-radius: 12px; padding: 28px; width: 420px; max-width: 95vw; }
+.confirm-modal h3 { font-size: 17px; font-weight: 700; color: #1a1a2e; margin-bottom: 10px; }
+.confirm-modal p { font-size: 13px; color: #555; line-height: 1.6; margin-bottom: 18px; }
+.confirm-modal .confirm-actions { display: flex; gap: 10px; justify-content: flex-end; }
+.btn-confirm-publish { padding: 10px 22px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; border: none; background: #c0392b; color: white; }
+.btn-confirm-publish:hover { background: #a93226; }
+.btn-cancel-confirm  { padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; background: #f0f0f0; color: #333; }
+
 /* Job detail panel */
-.job-detail { display: none; position: fixed; right: 0; top: 52px; width: 320px; height: calc(100vh - 52px); background: white; border-left: 1px solid #e0e0e0; z-index: 90; overflow-y: auto; padding: 16px; box-shadow: -4px 0 12px rgba(0,0,0,0.08); }
+.job-detail { display: none; position: fixed; right: 0; top: 52px; width: 320px; height: calc(100vh - 52px - 64px); background: white; border-left: 1px solid #e0e0e0; z-index: 90; overflow-y: auto; padding: 16px; box-shadow: -4px 0 12px rgba(0,0,0,0.08); }
 .job-detail.active { display: block; }
 .job-detail .close { float: right; background: none; border: none; font-size: 18px; cursor: pointer; color: #888; }
 .job-detail h3 { font-size: 14px; font-weight: 700; margin-bottom: 12px; }
@@ -113,11 +151,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .detail-row .label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #888; margin-bottom: 2px; }
 .detail-row .value { font-size: 13px; color: #1a1a2e; line-height: 1.5; }
 
-/* Loading */
 .loading { text-align: center; padding: 40px; color: #888; font-size: 13px; }
 .count-badge { display: inline-block; background: #e63946; color: white; border-radius: 10px; padding: 1px 6px; font-size: 10px; font-weight: 700; margin-left: 4px; }
 
-/* Sidebar tabs */
 .sidebar-tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px; border-bottom: 1px solid #e0e0e0; background: #fafafa; }
 .stab { flex: 1; min-width: 0; padding: 5px 4px; border: 1.5px solid #e0e0e0; border-radius: 5px; background: white; font-size: 10px; font-weight: 600; cursor: pointer; color: #666; transition: all 0.15s; white-space: nowrap; }
 .stab:hover { border-color: #1a1a2e; color: #1a1a2e; }
@@ -132,16 +168,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   <span style="color:rgba(255,255,255,0.4);font-size:12px;">Weekly Planner</span>
   <div class="week-nav">
     <a href="/?week={{ prev_week }}">← Prev</a>
-    <span class="week-label">
-      w/c {{ week_dates[0].strftime('%d %b %Y') }}
-    </span>
+    <span class="week-label">w/c {{ week_dates[0].strftime('%d %b %Y') }}</span>
     <a href="/?week={{ next_week }}">Next →</a>
   </div>
   <a href="/logout" class="btn-logout">Sign out</a>
 </div>
 
 <div class="layout">
-  <!-- Sidebar: unallocated jobs -->
+  <!-- Sidebar -->
   <div class="sidebar">
     <div class="sidebar-header">
       <h2>Unallocated Jobs <span class="count-badge" id="unallocated-count">0</span></h2>
@@ -161,11 +195,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     </div>
   </div>
 
-  <!-- Planning grid -->
+  <!-- Grid -->
   <div class="grid-wrapper">
     <div class="grid" id="grid">
-
-      <!-- Header row -->
       <div class="grid-head" id="grid-head" style="grid-template-columns: 110px repeat({{ contractors|length }}, 170px);">
         <div class="corner">Day</div>
         {% for c in contractors %}
@@ -176,15 +208,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
         {% endfor %}
       </div>
 
-      <!-- Day rows -->
       {% for day in week_dates %}
       {% set day_str = day.strftime('%Y-%m-%d') %}
-      {% set day_name = day.strftime('%A') %}
-      {% set day_display = day.strftime('%d %b') %}
       <div class="day-row" style="grid-template-columns: 110px repeat({{ contractors|length }}, 170px);">
-        <div class="day-label {% if day == today %}today{% endif %}" id="daylabel-{{ day_str }}">
-          <div class="day-name">{{ day_name }}</div>
-          <div class="day-date">{{ day_display }}</div>
+        <div class="day-label" id="daylabel-{{ day_str }}">
+          <div class="day-name">{{ day.strftime('%A') }}</div>
+          <div class="day-date">{{ day.strftime('%d %b') }}</div>
         </div>
         {% for c in contractors %}
         {% set slug = c.lower().replace(' ', '-') %}
@@ -202,8 +231,24 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
         {% endfor %}
       </div>
       {% endfor %}
-
     </div>
+  </div>
+</div>
+
+<!-- ── Publish Bar ── -->
+<div class="publish-bar" id="publish-bar">
+  <div class="publish-bar-left">
+    <span class="publish-label">Week status:</span>
+    <span class="publish-status-pill" id="publish-pill">Loading...</span>
+    <span class="revision-note" id="revision-note" style="display:none"></span>
+  </div>
+  <div class="publish-bar-right">
+    <button class="btn-reopen" id="btn-reopen" style="display:none" onclick="confirmReopen()">
+      ✏ Re-open for Editing
+    </button>
+    <button class="btn-publish" id="btn-publish" onclick="confirmPublish()">
+      📤 Publish Schedule
+    </button>
   </div>
 </div>
 
@@ -224,6 +269,18 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   </div>
 </div>
 
+<!-- Confirm Publish Modal -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="confirm-modal">
+    <h3 id="confirm-title">Publish Schedule?</h3>
+    <p id="confirm-body">This will send the week's job schedule to all allocated engineers by email and lock the planner. You can re-open it for edits and republish if needed.</p>
+    <div class="confirm-actions">
+      <button class="btn-cancel-confirm" onclick="closeConfirmModal()">Cancel</button>
+      <button class="btn-confirm-publish" id="confirm-action-btn" onclick="doPublish()">Send & Publish</button>
+    </div>
+  </div>
+</div>
+
 <!-- Job Detail Panel -->
 <div class="job-detail" id="job-detail">
   <button class="close" onclick="closeDetail()">×</button>
@@ -237,14 +294,16 @@ const CONTRACTORS = {{ contractors | tojson }};
 let allJobs = [];
 let allocations = [];
 let dragJobId = null;
-let dragAllocId = null;
 let currentNotesAllocId = null;
 let dayStatuses = {};
 let activeTab = 'CALLOUT';
+let weekStatus = "{{ week_status }}";
+let revisionCount = {{ revision_count }};
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   loadData();
+  updatePublishBar();
 });
 
 async function loadData() {
@@ -269,6 +328,112 @@ async function loadDayStatuses() {
   dayStatuses = await res.json();
 }
 
+// ── Publish Bar ───────────────────────────────────────────────────────────────
+function updatePublishBar() {
+  const pill     = document.getElementById('publish-pill');
+  const btnPub   = document.getElementById('btn-publish');
+  const btnReopen= document.getElementById('btn-reopen');
+  const revNote  = document.getElementById('revision-note');
+
+  if (weekStatus === 'published') {
+    pill.textContent = '✓ Published';
+    pill.className = 'publish-status-pill published';
+    btnPub.textContent = '📤 Republish (Send Revision)';
+    btnReopen.style.display = 'inline-block';
+    if (revisionCount > 0) {
+      revNote.textContent = `Revision ${revisionCount} sent`;
+      revNote.style.display = 'inline';
+    }
+  } else {
+    pill.textContent = '⏳ Draft';
+    pill.className = 'publish-status-pill draft';
+    btnPub.textContent = '📤 Publish Schedule';
+    btnReopen.style.display = 'none';
+    revNote.style.display = 'none';
+  }
+}
+
+function confirmPublish() {
+  const title = document.getElementById('confirm-title');
+  const body  = document.getElementById('confirm-body');
+  const btn   = document.getElementById('confirm-action-btn');
+
+  if (weekStatus === 'published') {
+    title.textContent = 'Send Revised Schedule?';
+    body.textContent = 'This will send an updated schedule to all engineers with a clear "⚠ REVISED SCHEDULE" banner so they know to re-check their jobs.';
+    btn.textContent = '⚠ Send Revision';
+  } else {
+    title.textContent = 'Publish Schedule?';
+    body.textContent = 'This will send the week\'s job schedule to all allocated engineers by email and lock the planner. You can re-open it for edits and republish if needed.';
+    btn.textContent = '📤 Send & Publish';
+  }
+  document.getElementById('confirm-modal').classList.add('active');
+}
+
+function closeConfirmModal() {
+  document.getElementById('confirm-modal').classList.remove('active');
+}
+
+async function doPublish() {
+  const btn = document.getElementById('confirm-action-btn');
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+
+  const res = await fetch('/api/publish', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ week_start: WEEK_START })
+  });
+  const data = await res.json();
+
+  closeConfirmModal();
+
+  if (data.success) {
+    weekStatus = 'published';
+    revisionCount = data.revision_count || 0;
+    updatePublishBar();
+    const msg = data.is_revision
+      ? `✓ Revision sent to ${data.emails_sent} engineer${data.emails_sent !== 1 ? 's' : ''}`
+      : `✓ Schedule published — ${data.emails_sent} email${data.emails_sent !== 1 ? 's' : ''} sent`;
+    showToast(msg, 'green');
+  } else {
+    showToast('Error: ' + (data.error || 'Unknown error'), 'red');
+  }
+
+  btn.disabled = false;
+}
+
+function confirmReopen() {
+  if (!confirm('Re-open this week for editing? Engineers will NOT be notified — republish when done to send the revision.')) return;
+  doReopen();
+}
+
+async function doReopen() {
+  const res = await fetch('/api/reopen', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ week_start: WEEK_START })
+  });
+  const data = await res.json();
+  if (data.success) {
+    weekStatus = 'draft';
+    updatePublishBar();
+    showToast('Week re-opened for editing', 'blue');
+  }
+}
+
+function showToast(msg, colour) {
+  const colours = { green: '#1a7a4a', red: '#c0392b', blue: '#1a4fa0' };
+  const toast = document.createElement('div');
+  toast.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+    background:${colours[colour]||'#1a2332'};color:white;padding:12px 24px;border-radius:8px;
+    font-size:13px;font-weight:600;z-index:500;box-shadow:0 4px 16px rgba(0,0,0,0.3);
+    transition:opacity 0.3s`;
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
+}
+
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 function setTab(tab) {
   activeTab = tab;
@@ -280,20 +445,14 @@ function setTab(tab) {
 function renderSidebar() {
   const list = document.getElementById('job-list');
   const query = document.getElementById('search-input').value.toLowerCase();
-
   const tabMap = {
-    'CALLOUT': ['CALLOUT'],
-    'QUOTE': ['QUOTE'],
-    'MIV': ['MIV'],
-    'PPM': ['PPM'],
-    'QUOTEREQUEST': ['QUOTEREQUEST'],
+    'CALLOUT': ['CALLOUT'], 'QUOTE': ['QUOTE'], 'MIV': ['MIV'],
+    'PPM': ['PPM'], 'QUOTEREQUEST': ['QUOTEREQUEST'],
   };
   const allowedTabs = tabMap[activeTab] || [activeTab];
 
-  // Update tab counts
   ['CALLOUT','QUOTE','MIV','PPM','QUOTEREQUEST'].forEach(function(t) {
-    const tabs = tabMap[t] || [t];
-    const count = allJobs.filter(function(j){ return tabs.includes(j.tab); }).length;
+    const count = allJobs.filter(function(j){ return (tabMap[t]||[t]).includes(j.tab); }).length;
     const el = document.getElementById('stab-count-' + t);
     if (el) el.textContent = count;
   });
@@ -301,17 +460,13 @@ function renderSidebar() {
   document.getElementById('unallocated-count').textContent = allJobs.length;
 
   let filtered = allJobs.filter(function(j){ return allowedTabs.includes(j.tab); });
-
-  if (activeTab === 'PPM') {
-    filtered = filtered.slice(0, 10);
-  }
-
+  if (activeTab === 'PPM') filtered = filtered.slice(0, 10);
   if (query) {
     filtered = filtered.filter(function(j) {
-      return (j.pub_name || '').toLowerCase().includes(query) ||
-        (j.display_id || '').toLowerCase().includes(query) ||
-        (j.trade_type || '').toLowerCase().includes(query) ||
-        (j.description || '').toLowerCase().includes(query);
+      return (j.pub_name||'').toLowerCase().includes(query) ||
+        (j.display_id||'').toLowerCase().includes(query) ||
+        (j.trade_type||'').toLowerCase().includes(query) ||
+        (j.description||'').toLowerCase().includes(query);
     });
   }
 
@@ -321,17 +476,16 @@ function renderSidebar() {
   }
 
   list.innerHTML = filtered.map(function(j) {
-    const tab = (j.tab || '').toLowerCase();
-    const tagClass = 'tag-' + tab;
+    const tab = (j.tab||'').toLowerCase();
     const dueClass = getDueClass(j.due_date);
     const dueLabel = j.due_date ? 'Due: ' + j.due_date : '';
-    const desc = (j.description || '').substring(0, 80) + ((j.description||'').length > 80 ? '...' : '');
+    const desc = (j.description||'').substring(0,80) + ((j.description||'').length > 80 ? '...' : '');
     const postcode = j.postcode ? ' · ' + j.postcode : '';
-    const detailJson = JSON.stringify(j).replace(/"/g, '&quot;');
-    return '<div class="job-card" draggable="true" data-job-id="' + j.job_id + '" ondragstart="onJobDragStart(event, \'' + j.job_id + '\')" onclick="showDetail(' + detailJson + ')">' +
-      '<div><span class="tag ' + tagClass + '">' + tab.toUpperCase() + '</span><span class="job-id">' + (j.display_id || j.job_id) + '</span></div>' +
-      '<div class="job-site">' + (j.pub_name || '—') + '</div>' +
-      '<div class="job-trade">' + (j.trade_type || '') + postcode + '</div>' +
+    const detailJson = JSON.stringify(j).replace(/"/g,'&quot;');
+    return '<div class="job-card" draggable="true" data-job-id="' + j.job_id + '" ondragstart="onJobDragStart(event,\'' + j.job_id + '\')" onclick="showDetail(' + detailJson + ')">' +
+      '<div><span class="tag tag-' + tab + '">' + tab.toUpperCase() + '</span><span class="job-id">' + (j.display_id||j.job_id) + '</span></div>' +
+      '<div class="job-site">' + (j.pub_name||'—') + '</div>' +
+      '<div class="job-trade">' + (j.trade_type||'') + postcode + '</div>' +
       '<div class="job-desc">' + desc + '</div>' +
       (dueLabel ? '<div class="job-due ' + dueClass + '">' + dueLabel + '</div>' : '') +
       '</div>';
@@ -342,9 +496,7 @@ function filterJobs() { renderSidebar(); }
 
 function getDueClass(due) {
   if (!due) return 'ok';
-  const d = new Date(due);
-  const today = new Date();
-  const diff = (d - today) / 86400000;
+  const diff = (new Date(due) - new Date()) / 86400000;
   if (diff < 0) return 'overdue';
   if (diff < 3) return 'soon';
   return 'ok';
@@ -352,7 +504,6 @@ function getDueClass(due) {
 
 // ── Grid ──────────────────────────────────────────────────────────────────────
 function renderGrid() {
-  // Apply day off statuses
   for (const [key, status] of Object.entries(dayStatuses)) {
     const parts = key.split('_');
     const date = parts[parts.length - 1];
@@ -360,34 +511,28 @@ function renderGrid() {
     const slug = contractor.toLowerCase().replace(/ /g, '-');
     const cell = document.getElementById(`cell-${slug}-${date}`);
     if (cell) {
-      if (status === 'off') {
-        cell.classList.add('day-off');
-      } else {
-        cell.classList.remove('day-off');
-      }
+      cell.classList.toggle('day-off', status === 'off');
     }
   }
 
-  // Clear all allocation cards first
   document.querySelectorAll('.alloc-card').forEach(c => c.remove());
 
-  // Render allocations
   const counts = {};
   for (const a of allocations) {
     const slug = a.contractor.toLowerCase().replace(/ /g, '-');
     const cell = document.getElementById(`cell-${slug}-${a.day_date}`);
     if (!cell) continue;
-
     counts[a.contractor] = (counts[a.contractor] || 0) + 1;
 
     const card = document.createElement('div');
     card.className = 'alloc-card' + (a.is_survey ? ' is-survey' : '');
     card.dataset.allocId = a.id;
-    const descPreview = (a.description || '').substring(0, 60) + ((a.description || '').length > 60 ? '...' : '');
+    const descPreview = (a.description||'').substring(0,60) + ((a.description||'').length > 60 ? '...' : '');
     const surveyLabel = a.is_survey ? ' <span style="color:#f4a261">📋 SURVEY</span>' : '';
-    card.innerHTML = '<button class="btn-remove" onclick="removeAllocation(' + a.id + ', event)">×</button>' +
-      '<div class="alloc-id">' + (a.display_id || a.job_id) + surveyLabel + '</div>' +
-      '<div class="alloc-site">' + (a.pub_name || '—') + '</div>' +
+    card.innerHTML =
+      '<button class="btn-remove" onclick="removeAllocation(' + a.id + ', event)">×</button>' +
+      '<div class="alloc-id">' + (a.display_id||a.job_id) + surveyLabel + '</div>' +
+      '<div class="alloc-site">' + (a.pub_name||'—') + '</div>' +
       '<div class="alloc-desc">' + descPreview + '</div>' +
       (a.notes ? '<div class="alloc-notes">' + a.notes + '</div>' : '') +
       '<button class="btn-notes" onclick="openNotesModal(' + a.id + ', event)">✏ notes</button>';
@@ -400,7 +545,6 @@ function renderGrid() {
     cell.insertBefore(card, toggle);
   }
 
-  // Update contractor job counts
   CONTRACTORS.forEach((c, i) => {
     const el = document.getElementById(`count-${i}`);
     if (el) el.textContent = `${counts[c] || 0} jobs`;
@@ -410,7 +554,6 @@ function renderGrid() {
 // ── Drag & Drop ───────────────────────────────────────────────────────────────
 function onJobDragStart(e, jobId) {
   dragJobId = jobId;
-  dragAllocId = null;
   e.dataTransfer.effectAllowed = 'move';
   e.currentTarget.classList.add('dragging');
   setTimeout(() => e.currentTarget.classList.remove('dragging'), 0);
@@ -418,25 +561,18 @@ function onJobDragStart(e, jobId) {
 
 function onDragOver(e) {
   const cell = e.currentTarget;
-  if (cell.classList.contains('day-off')) return; // block drop on day-off
+  if (cell.classList.contains('day-off')) return;
   e.preventDefault();
   cell.classList.add('drag-over');
 }
 
-function onDragLeave(e) {
-  e.currentTarget.classList.remove('drag-over');
-}
+function onDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
 
 async function onDrop(e) {
   e.preventDefault();
   const cell = e.currentTarget;
   cell.classList.remove('drag-over');
-
-  if (!dragJobId) return;
-  if (cell.classList.contains('day-off')) return; // blocked
-
-  const contractor = cell.dataset.contractor;
-  const dayDate = cell.dataset.date;
+  if (!dragJobId || cell.classList.contains('day-off')) return;
 
   const res = await fetch('/api/allocate', {
     method: 'POST',
@@ -444,21 +580,18 @@ async function onDrop(e) {
     body: JSON.stringify({
       week_start: WEEK_START,
       job_id: dragJobId,
-      contractor,
-      day_date: dayDate,
+      contractor: cell.dataset.contractor,
+      day_date: cell.dataset.date,
     })
   });
-
   const data = await res.json();
   if (data.success) {
-    // Job stays in sidebar - can be allocated to multiple contractors/days
     await loadAllocations();
     renderGrid();
     dragJobId = null;
   }
 }
 
-// ── Remove Allocation ─────────────────────────────────────────────────────────
 async function removeAllocation(allocId, e) {
   e.stopPropagation();
   const res = await fetch(`/api/allocate/${allocId}`, { method: 'DELETE' });
@@ -475,7 +608,7 @@ function openNotesModal(allocId, e) {
   e.stopPropagation();
   currentNotesAllocId = allocId;
   const alloc = allocations.find(a => a.id === allocId);
-  document.getElementById('modal-notes').value = alloc ? (alloc.notes || '') : '';
+  document.getElementById('modal-notes').value = alloc ? (alloc.notes||'') : '';
   document.getElementById('modal-survey').checked = alloc ? alloc.is_survey : false;
   document.getElementById('notes-modal').classList.add('active');
 }
@@ -489,74 +622,52 @@ async function saveNotes() {
   if (!currentNotesAllocId) return;
   const notes = document.getElementById('modal-notes').value;
   const is_survey = document.getElementById('modal-survey').checked;
-
   await fetch(`/api/allocate/${currentNotesAllocId}/notes`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ notes, is_survey })
   });
-
-  // Update local state
   const alloc = allocations.find(a => a.id === currentNotesAllocId);
   if (alloc) { alloc.notes = notes; alloc.is_survey = is_survey; }
-
   closeNotesModal();
   renderGrid();
 }
 
-// ── Day Off Toggle ────────────────────────────────────────────────────────────
 async function toggleDayOff(contractor, date, btn) {
   const key = `${contractor}_${date}`;
-  const current = dayStatuses[key] || 'available';
-  const newStatus = current === 'off' ? 'available' : 'off';
-
+  const newStatus = (dayStatuses[key] || 'available') === 'off' ? 'available' : 'off';
   await fetch('/api/contractor-day', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ week_start: WEEK_START, contractor, day_date: date, status: newStatus })
   });
-
   dayStatuses[key] = newStatus;
   renderGrid();
 }
 
-// ── Job Detail Panel ──────────────────────────────────────────────────────────
+// ── Job Detail ────────────────────────────────────────────────────────────────
 function showDetailFromAlloc(a) {
-  showDetail({
-    job_id: a.job_id,
-    display_id: a.display_id,
-    pub_name: a.pub_name,
-    postcode: a.postcode,
-    tab_label: a.tab_label,
-    trade_type: a.trade_type,
-    due_date: a.due_date,
-    due_time: a.due_time,
-    description: a.description,
-  });
+  showDetail({ job_id: a.job_id, display_id: a.display_id, pub_name: a.pub_name,
+    postcode: a.postcode, tab_label: a.tab_label, trade_type: a.trade_type,
+    due_date: a.due_date, due_time: a.due_time, description: a.description });
 }
 
 function showDetail(job) {
-  const panel = document.getElementById('job-detail');
   document.getElementById('detail-title').textContent = job.display_id || job.job_id;
   document.getElementById('detail-content').innerHTML = `
-    <div class="detail-row"><div class="label">Site</div><div class="value">${job.pub_name || '—'}</div></div>
-    <div class="detail-row"><div class="label">Postcode</div><div class="value">${job.postcode || '—'}</div></div>
-    <div class="detail-row"><div class="label">Type</div><div class="value">${job.tab_label || job.tab}</div></div>
-    <div class="detail-row"><div class="label">Trade</div><div class="value">${job.trade_type || '—'}</div></div>
-    <div class="detail-row"><div class="label">Due</div><div class="value">${job.due_date || '—'} ${job.due_time || ''}</div></div>
-    <div class="detail-row"><div class="label">Description</div><div class="value">${job.description || '—'}</div></div>
-  `;
-  panel.classList.add('active');
+    <div class="detail-row"><div class="label">Site</div><div class="value">${job.pub_name||'—'}</div></div>
+    <div class="detail-row"><div class="label">Postcode</div><div class="value">${job.postcode||'—'}</div></div>
+    <div class="detail-row"><div class="label">Type</div><div class="value">${job.tab_label||job.tab||'—'}</div></div>
+    <div class="detail-row"><div class="label">Trade</div><div class="value">${job.trade_type||'—'}</div></div>
+    <div class="detail-row"><div class="label">Due</div><div class="value">${job.due_date||'—'} ${job.due_time||''}</div></div>
+    <div class="detail-row"><div class="label">Description</div><div class="value">${job.description||'—'}</div></div>`;
+  document.getElementById('job-detail').classList.add('active');
 }
 
-function closeDetail() {
-  document.getElementById('job-detail').classList.remove('active');
-}
+function closeDetail() { document.getElementById('job-detail').classList.remove('active'); }
 
-// Close modal on overlay click
-document.getElementById('notes-modal').addEventListener('click', function(e) {
-  if (e.target === this) closeNotesModal();
-});
+document.getElementById('notes-modal').addEventListener('click', function(e) { if (e.target === this) closeNotesModal(); });
+document.getElementById('confirm-modal').addEventListener('click', function(e) { if (e.target === this) closeConfirmModal(); });
 </script>
 </body>
 </html>
