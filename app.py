@@ -104,6 +104,16 @@ def init_db():
             created_at      TIMESTAMPTZ DEFAULT NOW()
         );
 
+        CREATE TABLE IF NOT EXISTS job_notes (
+            id                  SERIAL PRIMARY KEY,
+            job_id              TEXT NOT NULL UNIQUE,
+            notes               TEXT DEFAULT '',
+            status_tags         TEXT[] DEFAULT '{}',
+            pencilled_engineer  TEXT DEFAULT '',
+            created_at          TIMESTAMPTZ DEFAULT NOW(),
+            updated_at          TIMESTAMPTZ DEFAULT NOW()
+        );
+
         CREATE TABLE IF NOT EXISTS planner_weekly_notes (
             id              SERIAL PRIMARY KEY,
             contractor_key  TEXT NOT NULL,
@@ -738,3 +748,92 @@ except Exception as e:
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
+
+
+# ── API: Job Notes & Status ───────────────────────────────────────────────────
+
+@app.route("/api/job_note/<job_id>")
+@login_required
+def api_get_job_note(job_id):
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            "SELECT notes, status_tags, pencilled_engineer FROM job_notes WHERE job_id = %s",
+            (job_id,)
+        )
+        row = cur.fetchone()
+        if row:
+            return jsonify({
+                "notes": row["notes"] or "",
+                "status_tags": list(row["status_tags"] or []),
+                "pencilled_engineer": row["pencilled_engineer"] or "",
+            })
+        return jsonify({"notes": "", "status_tags": [], "pencilled_engineer": ""})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"notes": "", "status_tags": [], "pencilled_engineer": "", "error": str(e)})
+    finally:
+        cur.close()
+        conn.close()
+
+
+@app.route("/api/job_note/<job_id>", methods=["POST"])
+@login_required
+def api_save_job_note(job_id):
+    data = request.json
+    notes = data.get("notes", "")
+    status_tags = data.get("status_tags", [])
+    pencilled_engineer = data.get("pencilled_engineer", "")
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            """INSERT INTO job_notes (job_id, notes, status_tags, pencilled_engineer, updated_at)
+               VALUES (%s, %s, %s, %s, NOW())
+               ON CONFLICT (job_id) DO UPDATE
+               SET notes = EXCLUDED.notes,
+                   status_tags = EXCLUDED.status_tags,
+                   pencilled_engineer = EXCLUDED.pencilled_engineer,
+                   updated_at = NOW()""",
+            (job_id, notes, status_tags, pencilled_engineer)
+        )
+        conn.commit()
+        return jsonify({"success": True})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"success": False, "error": str(e)})
+    finally:
+        cur.close()
+        conn.close()
+
+
+@app.route("/api/job_notes_bulk")
+@login_required
+def api_job_notes_bulk():
+    """Returns status_tags and pencilled_engineer for all jobs that have data,
+    so the sidebar can render pills without fetching each job individually."""
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            """SELECT job_id, status_tags, pencilled_engineer
+               FROM job_notes
+               WHERE array_length(status_tags, 1) > 0
+                  OR pencilled_engineer != ''
+                  OR notes != ''"""
+        )
+        rows = cur.fetchall()
+        result = {}
+        for r in rows:
+            result[r["job_id"]] = {
+                "status_tags": list(r["status_tags"] or []),
+                "pencilled_engineer": r["pencilled_engineer"] or "",
+            }
+        return jsonify(result)
+    except Exception as e:
+        conn.rollback()
+        return jsonify({})
+    finally:
+        cur.close()
+        conn.close()
