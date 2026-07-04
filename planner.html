@@ -235,10 +235,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .count-badge { display: inline-block; background: #e63946; color: white; border-radius: 10px; padding: 1px 6px; font-size: 10px; font-weight: 700; margin-left: 4px; }
 
 .sidebar-tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px; border-bottom: 1px solid #e0e0e0; background: #fafafa; }
-.stab { flex: 1; min-width: 0; padding: 5px 4px; border: 1.5px solid #e0e0e0; border-radius: 5px; background: white; font-size: 10px; font-weight: 600; cursor: pointer; color: #666; transition: all 0.15s; white-space: nowrap; }
+.stab { flex: 1; min-width: 0; padding: 6px 4px; border: 1.5px solid #e0e0e0; border-radius: 5px; background: white; font-size: 10px; font-weight: 600; cursor: pointer; color: #666; transition: all 0.15s; white-space: nowrap; display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .stab:hover { border-color: #1a1a2e; color: #1a1a2e; }
 .stab.active { background: #1a1a2e; color: white; border-color: #1a1a2e; }
-.stab-count { display: inline-block; background: rgba(0,0,0,0.15); border-radius: 8px; padding: 0 5px; font-size: 9px; margin-left: 2px; }
+.stab-count { display: block; font-size: 13px; font-weight: 800; line-height: 1; }
 </style>
 </head>
 <body>
@@ -264,11 +264,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <input type="text" id="search-input" placeholder="Search..." oninput="filterJobs()">
     </div>
     <div class="sidebar-tabs">
-      <button class="stab active" onclick="setTab('CALLOUT')" id="tab-CALLOUT">Callouts <span class="stab-count" id="stab-count-CALLOUT">0</span></button>
-      <button class="stab" onclick="setTab('QUOTE')" id="tab-QUOTE">Quotes <span class="stab-count" id="stab-count-QUOTE">0</span></button>
-      <button class="stab" onclick="setTab('MIV')" id="tab-MIV">MIV <span class="stab-count" id="stab-count-MIV">0</span></button>
-      <button class="stab" onclick="setTab('PPM')" id="tab-PPM">PPM <span class="stab-count" id="stab-count-PPM">0</span></button>
-      <button class="stab" onclick="setTab('QUOTEREQUEST')" id="tab-QUOTEREQUEST">Requests <span class="stab-count" id="stab-count-QUOTEREQUEST">0</span></button>
+      <button class="stab active" onclick="setTab('CALLOUT')" id="tab-CALLOUT">Callouts<span class="stab-count" id="stab-count-CALLOUT">0</span></button>
+      <button class="stab" onclick="setTab('QUOTE')" id="tab-QUOTE">Quotes<span class="stab-count" id="stab-count-QUOTE">0</span></button>
+      <button class="stab" onclick="setTab('MIV')" id="tab-MIV">MIV<span class="stab-count" id="stab-count-MIV">0</span></button>
+      <button class="stab" onclick="setTab('PPM')" id="tab-PPM">PPM<span class="stab-count" id="stab-count-PPM">0</span></button>
+      <button class="stab" onclick="setTab('QUOTEREQUEST')" id="tab-QUOTEREQUEST">Requests<span class="stab-count" id="stab-count-QUOTEREQUEST">0</span></button>
     </div>
     <div class="job-list" id="job-list">
       <div class="loading">Loading jobs...</div>
