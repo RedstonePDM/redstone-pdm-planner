@@ -19,7 +19,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .btn-logout { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 12px; }
 
 /* Layout */
-.layout { display: flex; height: calc(100vh - 52px - 64px); } /* leave room for publish bar */
+.layout { display: flex; height: calc(100vh - 52px - 64px); }
 
 /* Sidebar */
 .sidebar { width: 280px; min-width: 280px; background: white; border-right: 1px solid #e0e0e0; display: flex; flex-direction: column; }
@@ -83,6 +83,35 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .day-off-toggle button { background: none; border: 1px solid #e0e0e0; border-radius: 4px; font-size: 9px; padding: 2px 5px; cursor: pointer; color: #aaa; }
 .day-off-toggle button:hover { background: #f5f5f5; color: #666; }
 
+/* ── Planner Notes Row ── */
+.notes-row { display: grid; border-bottom: 2px solid #e0e0e0; background: #f8f9fb; }
+.notes-row-label {
+  width: 110px; min-width: 110px; padding: 8px;
+  background: #f8f9fb; border-right: 2px solid #e0e0e0;
+  position: sticky; left: 0; z-index: 10;
+  display: flex; align-items: flex-start; padding-top: 10px;
+}
+.notes-row-label span { font-size: 10px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 0.4px; }
+.notes-cell { min-width: 170px; padding: 6px; border-left: 1px solid #e8e8e8; }
+.planner-note-area {
+  width: 100%; min-height: 58px; padding: 6px 8px;
+  border: 1.5px solid #e8e8e8; border-radius: 5px;
+  font-size: 11px; font-family: inherit; color: #1a2332;
+  background: white; resize: vertical; outline: none;
+  line-height: 1.4; transition: border-color 0.15s;
+}
+.planner-note-area:focus { border-color: #c0392b; }
+.planner-note-area::placeholder { color: #ccc; }
+.note-save-btn {
+  display: block; margin-top: 4px; padding: 3px 10px;
+  background: #1a2332; color: white; border: none; border-radius: 4px;
+  font-size: 10px; font-weight: 600; cursor: pointer; opacity: 0;
+  transition: opacity 0.15s;
+}
+.notes-cell:focus-within .note-save-btn { opacity: 1; }
+.note-save-btn:hover { background: #c0392b; }
+.note-saved-indicator { font-size: 10px; color: #1a7a4a; margin-top: 3px; display: none; }
+
 /* ── Publish Bar ── */
 .publish-bar {
   position: fixed; bottom: 0; left: 0; right: 0; height: 64px;
@@ -92,9 +121,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   box-shadow: 0 -4px 16px rgba(0,0,0,0.2);
 }
 .publish-bar-left { display: flex; align-items: center; gap: 16px; }
-.publish-status-pill {
-  padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
-}
+.publish-status-pill { padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; }
 .publish-status-pill.draft     { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.7); }
 .publish-status-pill.published { background: #1a7a4a; color: white; }
 .publish-label { color: rgba(255,255,255,0.6); font-size: 12px; }
@@ -231,6 +258,29 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
         {% endfor %}
       </div>
       {% endfor %}
+
+      <!-- ── Planner Notes Row ── -->
+      <div class="notes-row" style="grid-template-columns: 110px repeat({{ contractors|length }}, 170px);">
+        <div class="notes-row-label">
+          <span>📝 Notes</span>
+        </div>
+        {% for c in contractors %}
+        {% set contractor_key = c.lower().replace(' ', '_') %}
+        <div class="notes-cell">
+          <textarea
+            class="planner-note-area"
+            id="planner-note-{{ contractor_key }}"
+            data-contractor="{{ c }}"
+            data-key="{{ contractor_key }}"
+            placeholder="Planning notes for {{ c.split()[0] }}…"
+            onkeydown="handleNoteKey(event, '{{ c }}')"
+          >{{ planner_notes.get(contractor_key, '') }}</textarea>
+          <button class="note-save-btn" onclick="savePlannerNote('{{ c }}')">Save</button>
+          <div class="note-saved-indicator" id="note-saved-{{ contractor_key }}">✓ Saved</div>
+        </div>
+        {% endfor %}
+      </div>
+
     </div>
   </div>
 </div>
@@ -328,12 +378,51 @@ async function loadDayStatuses() {
   dayStatuses = await res.json();
 }
 
+// ── Planner Notes ─────────────────────────────────────────────────────────────
+function handleNoteKey(event, contractor) {
+  // Tab key moves to next contractor's note textarea rather than inserting a tab
+  if (event.key === 'Tab') {
+    event.preventDefault();
+    const contractorKey = contractor.toLowerCase().replace(/ /g, '_');
+    const allNotes = document.querySelectorAll('.planner-note-area');
+    const arr = Array.from(allNotes);
+    const idx = arr.findIndex(el => el.dataset.key === contractorKey);
+    // Save current note first
+    savePlannerNote(contractor);
+    // Focus next
+    const next = arr[idx + 1];
+    if (next) next.focus();
+  }
+}
+
+async function savePlannerNote(contractor) {
+  const contractorKey = contractor.toLowerCase().replace(/ /g, '_');
+  const textarea = document.getElementById('planner-note-' + contractorKey);
+  if (!textarea) return;
+  const note = textarea.value.trim();
+
+  const res = await fetch('/api/planner_note', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contractor, week_commencing: WEEK_START, note })
+  });
+  const data = await res.json();
+
+  if (data.success) {
+    const indicator = document.getElementById('note-saved-' + contractorKey);
+    if (indicator) {
+      indicator.style.display = 'block';
+      setTimeout(() => { indicator.style.display = 'none'; }, 2000);
+    }
+  }
+}
+
 // ── Publish Bar ───────────────────────────────────────────────────────────────
 function updatePublishBar() {
-  const pill     = document.getElementById('publish-pill');
-  const btnPub   = document.getElementById('btn-publish');
-  const btnReopen= document.getElementById('btn-reopen');
-  const revNote  = document.getElementById('revision-note');
+  const pill      = document.getElementById('publish-pill');
+  const btnPub    = document.getElementById('btn-publish');
+  const btnReopen = document.getElementById('btn-reopen');
+  const revNote   = document.getElementById('revision-note');
 
   if (weekStatus === 'published') {
     pill.textContent = '✓ Published';
@@ -364,7 +453,7 @@ function confirmPublish() {
     btn.textContent = '⚠ Send Revision';
   } else {
     title.textContent = 'Publish Schedule?';
-    body.textContent = 'This will send the week\'s job schedule to all allocated engineers by email and lock the planner. You can re-open it for edits and republish if needed.';
+    body.textContent = "This will send the week's job schedule to all allocated engineers by email and lock the planner. You can re-open it for edits and republish if needed.";
     btn.textContent = '📤 Send & Publish';
   }
   document.getElementById('confirm-modal').classList.add('active');
