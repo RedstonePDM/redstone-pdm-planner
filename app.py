@@ -104,7 +104,7 @@ def init_db():
             created_at      TIMESTAMPTZ DEFAULT NOW()
         );
 
-        CREATE TABLE IF NOT EXISTS contractor_weekly_notes (
+        CREATE TABLE IF NOT EXISTS planner_weekly_notes (
             id              SERIAL PRIMARY KEY,
             contractor_key  TEXT NOT NULL,
             week_commencing DATE NOT NULL,
@@ -340,10 +340,10 @@ def planner():
     # Load existing planner notes for this week for all contractors
     planner_notes = {}
     try:
-        # contractor_key in contractor_weekly_notes matches the contractor name lowercased with underscores
+        # contractor_key matches the contractor name lowercased with underscores
         cur.execute("""
             SELECT contractor_key, note
-            FROM contractor_weekly_notes
+            FROM planner_weekly_notes
             WHERE week_commencing = %s
         """, (week_start_str,))
         for row in cur.fetchall():
@@ -373,7 +373,7 @@ def planner():
 @login_required
 def api_planner_note():
     """Save a planning note for a contractor for the current week.
-    Writes to contractor_weekly_notes using the contractor name as the key
+    Writes to planner_weekly_notes using the contractor name as the key
     (lowercased, spaces replaced with underscores) so the jobcard app can read it."""
     data = request.json
     contractor_name = data.get("contractor")
@@ -391,14 +391,14 @@ def api_planner_note():
     try:
         if note:
             cur.execute("""
-                INSERT INTO contractor_weekly_notes (contractor_key, week_commencing, note, created_by)
+                INSERT INTO planner_weekly_notes (contractor_key, week_commencing, note, created_by)
                 VALUES (%s, %s, %s, 'admin')
                 ON CONFLICT (contractor_key, week_commencing) DO UPDATE
                 SET note = EXCLUDED.note, updated_at = NOW()
             """, (contractor_key, week_commencing, note))
         else:
             cur.execute("""
-                DELETE FROM contractor_weekly_notes
+                DELETE FROM planner_weekly_notes
                 WHERE contractor_key = %s AND week_commencing = %s
             """, (contractor_key, week_commencing))
         conn.commit()
