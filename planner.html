@@ -83,7 +83,60 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .day-off-toggle button { background: none; border: 1px solid #e0e0e0; border-radius: 4px; font-size: 9px; padding: 2px 5px; cursor: pointer; color: #aaa; }
 .day-off-toggle button:hover { background: #f5f5f5; color: #666; }
 
-/* ── Planner Notes Row ── */
+/* ── Job Status Pills ── */
+.status-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
+.status-pill-btn {
+  padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;
+  cursor: pointer; border: 1.5px solid transparent; transition: all 0.15s;
+  user-select: none;
+}
+.status-pill-btn.awaiting-parts   { background: #fff8e1; color: #e65100; border-color: #ffcc02; }
+.status-pill-btn.awaiting-date    { background: #fff3e0; color: #bf360c; border-color: #ffab40; }
+.status-pill-btn.pencilled        { background: #e3f2fd; color: #1565c0; border-color: #64b5f6; }
+.status-pill-btn.needs-signoff    { background: #f3e5f5; color: #6a1b9a; border-color: #ce93d8; }
+.status-pill-btn.cancel-duplicate { background: #fdf0ef; color: #c0392b; border-color: #ef9a9a; }
+.status-pill-btn.ready            { background: #e8f5e9; color: #1b5e20; border-color: #81c784; }
+.status-pill-btn.active { opacity: 1; box-shadow: 0 0 0 2px currentColor; }
+.status-pill-btn:not(.active) { opacity: 0.45; }
+
+/* Sidebar mini pills */
+.mini-pill {
+  display: inline-block; padding: 1px 5px; border-radius: 6px;
+  font-size: 9px; font-weight: 700; margin-left: 3px; vertical-align: middle;
+}
+.mini-pill.awaiting-parts   { background: #fff8e1; color: #e65100; }
+.mini-pill.awaiting-date    { background: #fff3e0; color: #bf360c; }
+.mini-pill.pencilled        { background: #e3f2fd; color: #1565c0; }
+.mini-pill.needs-signoff    { background: #f3e5f5; color: #6a1b9a; }
+.mini-pill.cancel-duplicate { background: #fdf0ef; color: #c0392b; }
+.mini-pill.ready            { background: #e8f5e9; color: #1b5e20; }
+
+/* Drawer enhancements */
+.drawer-section { margin-top: 14px; border-top: 1px solid #f0f0f0; padding-top: 12px; }
+.drawer-section-label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #aaa; margin-bottom: 8px; letter-spacing: 0.4px; }
+.drawer-notes-area {
+  width: 100%; min-height: 80px; padding: 8px 10px;
+  border: 1.5px solid #e0e0e0; border-radius: 6px;
+  font-size: 12px; font-family: inherit; color: #1a2332;
+  resize: vertical; outline: none; line-height: 1.5;
+  transition: border-color 0.15s;
+}
+.drawer-notes-area:focus { border-color: #1a1a2e; }
+.pencilled-input {
+  width: 100%; padding: 7px 10px; border: 1.5px solid #e0e0e0; border-radius: 6px;
+  font-size: 12px; font-family: inherit; outline: none; margin-top: 6px;
+  transition: border-color 0.15s;
+}
+.pencilled-input:focus { border-color: #1a1a2e; }
+.drawer-save-btn {
+  margin-top: 10px; width: 100%; padding: 8px; border: none; border-radius: 6px;
+  background: #1a1a2e; color: white; font-size: 12px; font-weight: 700;
+  cursor: pointer; transition: background 0.15s;
+}
+.drawer-save-btn:hover { background: #c0392b; }
+.drawer-saved-msg { font-size: 11px; color: #1a7a4a; margin-top: 6px; text-align: center; display: none; }
+
+/* ── Planner Notes Row ── *//* ── Planner Notes Row ── */
 .notes-row { display: grid; border-bottom: 2px solid #e0e0e0; background: #f8f9fb; }
 .notes-row-label {
   width: 110px; min-width: 110px; padding: 8px;
@@ -170,7 +223,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .btn-cancel-confirm  { padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; background: #f0f0f0; color: #333; }
 
 /* Job detail panel */
-.job-detail { display: none; position: fixed; right: 0; top: 52px; width: 320px; height: calc(100vh - 52px - 64px); background: white; border-left: 1px solid #e0e0e0; z-index: 90; overflow-y: auto; padding: 16px; box-shadow: -4px 0 12px rgba(0,0,0,0.08); }
+.job-detail { display: none; position: fixed; right: 0; top: 52px; width: 360px; height: calc(100vh - 52px - 64px); background: white; border-left: 1px solid #e0e0e0; z-index: 90; overflow-y: auto; padding: 16px; box-shadow: -4px 0 12px rgba(0,0,0,0.08); }
 .job-detail.active { display: block; }
 .job-detail .close { float: right; background: none; border: none; font-size: 18px; cursor: pointer; color: #888; }
 .job-detail h3 { font-size: 14px; font-weight: 700; margin-bottom: 12px; }
@@ -353,6 +406,7 @@ let revisionCount = {{ revision_count }};
 // ── Init ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   loadData();
+  loadJobNotesBulk();
   updatePublishBar();
 });
 
@@ -571,8 +625,9 @@ function renderSidebar() {
     const desc = (j.description||'').substring(0,80) + ((j.description||'').length > 80 ? '...' : '');
     const postcode = j.postcode ? ' · ' + j.postcode : '';
     const detailJson = JSON.stringify(j).replace(/"/g,'&quot;');
+    const miniPills = getMiniPills(j.job_id);
     return '<div class="job-card" draggable="true" data-job-id="' + j.job_id + '" ondragstart="onJobDragStart(event,\'' + j.job_id + '\')" onclick="showDetail(' + detailJson + ')">' +
-      '<div><span class="tag tag-' + tab + '">' + tab.toUpperCase() + '</span><span class="job-id">' + (j.display_id||j.job_id) + '</span></div>' +
+      '<div><span class="tag tag-' + tab + '">' + tab.toUpperCase() + '</span><span class="job-id">' + (j.display_id||j.job_id) + '</span>' + miniPills + '</div>' +
       '<div class="job-site">' + (j.pub_name||'—') + '</div>' +
       '<div class="job-trade">' + (j.trade_type||'') + postcode + '</div>' +
       '<div class="job-desc">' + desc + '</div>' +
@@ -741,7 +796,40 @@ function showDetailFromAlloc(a) {
     due_date: a.due_date, due_time: a.due_time, description: a.description });
 }
 
-function showDetail(job) {
+const STATUS_DEFS = [
+  { key: 'awaiting-parts',   label: 'Awaiting Parts',    mini: 'Parts' },
+  { key: 'awaiting-date',    label: 'Awaiting Cust. Date', mini: 'Date' },
+  { key: 'pencilled',        label: 'Pencilled In',       mini: 'Pencilled' },
+  { key: 'needs-signoff',    label: 'Needs Sign-off',     mini: 'Sign-off' },
+  { key: 'cancel-duplicate', label: 'Cancel/Duplicate',   mini: 'Cancel' },
+  { key: 'ready',            label: 'Ready to Allocate',  mini: 'Ready' },
+];
+
+let currentDetailJobId = null;
+let currentTags = [];
+let jobNotesCache = {};  // populated by loadJobNotesBulk on init
+
+async function loadJobNotesBulk() {
+  try {
+    const res = await fetch('/api/job_notes_bulk');
+    jobNotesCache = await res.json();
+  } catch(e) { jobNotesCache = {}; }
+}
+
+function getMiniPills(job_id) {
+  const d = jobNotesCache[job_id];
+  if (!d || (!d.status_tags.length && !d.pencilled_engineer)) return '';
+  let html = '';
+  d.status_tags.forEach(tag => {
+    const def = STATUS_DEFS.find(s => s.key === tag);
+    if (def) html += `<span class="mini-pill ${tag}">${def.mini}</span>`;
+  });
+  if (d.pencilled_engineer) html += `<span class="mini-pill pencilled">✎ ${d.pencilled_engineer.split(' ')[0]}</span>`;
+  return html;
+}
+
+async function showDetail(job) {
+  currentDetailJobId = job.job_id;
   document.getElementById('detail-title').textContent = job.display_id || job.job_id;
   document.getElementById('detail-content').innerHTML = `
     <div class="detail-row"><div class="label">Site</div><div class="value">${job.pub_name||'—'}</div></div>
@@ -749,11 +837,77 @@ function showDetail(job) {
     <div class="detail-row"><div class="label">Type</div><div class="value">${job.tab_label||job.tab||'—'}</div></div>
     <div class="detail-row"><div class="label">Trade</div><div class="value">${job.trade_type||'—'}</div></div>
     <div class="detail-row"><div class="label">Due</div><div class="value">${job.due_date||'—'} ${job.due_time||''}</div></div>
-    <div class="detail-row"><div class="label">Description</div><div class="value">${job.description||'—'}</div></div>`;
+    <div class="detail-row"><div class="label">Description</div><div class="value">${job.description||'—'}</div></div>
+    <div class="drawer-section">
+      <div class="drawer-section-label">Job Status</div>
+      <div class="status-pills" id="drawer-pills"></div>
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-section-label">Pencil In Engineer</div>
+      <input class="pencilled-input" id="drawer-pencilled" type="text" placeholder="Engineer name…">
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-section-label">Notes</div>
+      <textarea class="drawer-notes-area" id="drawer-notes" placeholder="Add any relevant notes about this job…"></textarea>
+    </div>
+    <button class="drawer-save-btn" onclick="saveJobNote()">Save</button>
+    <div class="drawer-saved-msg" id="drawer-saved">✓ Saved</div>`;
   document.getElementById('job-detail').classList.add('active');
+
+  // Load existing data for this job
+  try {
+    const res = await fetch('/api/job_note/' + job.job_id);
+    const data = await res.json();
+    currentTags = data.status_tags || [];
+    document.getElementById('drawer-notes').value = data.notes || '';
+    document.getElementById('drawer-pencilled').value = data.pencilled_engineer || '';
+  } catch(e) {
+    currentTags = [];
+  }
+  renderDrawerPills();
 }
 
-function closeDetail() { document.getElementById('job-detail').classList.remove('active'); }
+function renderDrawerPills() {
+  const container = document.getElementById('drawer-pills');
+  if (!container) return;
+  container.innerHTML = STATUS_DEFS.map(s => {
+    const active = currentTags.includes(s.key) ? 'active' : '';
+    return `<button class="status-pill-btn ${s.key} ${active}" onclick="toggleTag('${s.key}')">${s.label}</button>`;
+  }).join('');
+}
+
+function toggleTag(key) {
+  if (currentTags.includes(key)) {
+    currentTags = currentTags.filter(t => t !== key);
+  } else {
+    currentTags.push(key);
+  }
+  renderDrawerPills();
+}
+
+async function saveJobNote() {
+  if (!currentDetailJobId) return;
+  const notes = document.getElementById('drawer-notes').value;
+  const pencilled_engineer = document.getElementById('drawer-pencilled').value;
+  const res = await fetch('/api/job_note/' + currentDetailJobId, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ notes, status_tags: currentTags, pencilled_engineer })
+  });
+  const data = await res.json();
+  if (data.success) {
+    // Update local cache and re-render sidebar pills
+    jobNotesCache[currentDetailJobId] = { status_tags: currentTags, pencilled_engineer };
+    renderSidebar();
+    const msg = document.getElementById('drawer-saved');
+    if (msg) { msg.style.display = 'block'; setTimeout(() => msg.style.display = 'none', 2000); }
+  }
+}
+
+function closeDetail() {
+  document.getElementById('job-detail').classList.remove('active');
+  currentDetailJobId = null;
+}
 
 document.getElementById('notes-modal').addEventListener('click', function(e) { if (e.target === this) closeNotesModal(); });
 document.getElementById('confirm-modal').addEventListener('click', function(e) { if (e.target === this) closeConfirmModal(); });
