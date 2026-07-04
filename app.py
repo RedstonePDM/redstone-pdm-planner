@@ -103,6 +103,17 @@ def init_db():
             notes           TEXT,
             created_at      TIMESTAMPTZ DEFAULT NOW()
         );
+
+        CREATE TABLE IF NOT EXISTS contractor_weekly_notes (
+            id              SERIAL PRIMARY KEY,
+            contractor_key  TEXT NOT NULL,
+            week_commencing DATE NOT NULL,
+            note            TEXT NOT NULL,
+            created_by      TEXT DEFAULT 'admin',
+            created_at      TIMESTAMPTZ DEFAULT NOW(),
+            updated_at      TIMESTAMPTZ DEFAULT NOW(),
+            UNIQUE (contractor_key, week_commencing)
+        );
     """)
 
     # Add status/revision columns if upgrading from old schema
@@ -223,7 +234,6 @@ def send_schedule_emails(week_start_str, is_revision=False):
         print("No allocations found — no emails sent")
         return 0
 
-    # Group by contractor
     from collections import defaultdict
     by_contractor = defaultdict(list)
     for a in allocs:
@@ -239,7 +249,6 @@ def send_schedule_emails(week_start_str, is_revision=False):
             print(f"No email for {contractor_name} — skipping")
             continue
 
-        # Build job table rows grouped by day
         from itertools import groupby
         jobs_sorted = sorted(jobs, key=lambda x: x["day_date"])
         rows_html = ""
@@ -316,7 +325,6 @@ def planner():
     prev_week = (week_start - timedelta(days=7)).strftime("%Y-%m-%d")
     next_week = (week_start + timedelta(days=7)).strftime("%Y-%m-%d")
 
-    # Get publish status for this week
     conn = get_db()
     cur = conn.cursor()
     try:
@@ -328,6 +336,21 @@ def planner():
         conn.rollback()
         week_status = "draft"
         revision_count = 0
+
+    # Load existing planner notes for this week for all contractors
+    planner_notes = {}
+    try:
+        # contractor_key in contractor_weekly_notes matches the contractor name lowercased with underscores
+        cur.execute("""
+            SELECT contractor_key, note
+            FROM contractor_weekly_notes
+            WHERE week_commencing = %s
+        """, (week_start_str,))
+        for row in cur.fetchall():
+            planner_notes[row["contractor_key"]] = row["note"]
+    except Exception:
+        conn.rollback()
+
     cur.close()
     conn.close()
 
@@ -340,10 +363,55 @@ def planner():
         next_week=next_week,
         week_status=week_status,
         revision_count=revision_count,
+        planner_notes=planner_notes,
     )
 
 
-# ── API: Publish / Reopen ────────────────────────────────────────────────────
+# ── API: Planner Notes ────────────────────────────────────────────────────────
+
+@app.route("/api/planner_note", methods=["POST"])
+@login_required
+def api_planner_note():
+    """Save a planning note for a contractor for the current week.
+    Writes to contractor_weekly_notes using the contractor name as the key
+    (lowercased, spaces replaced with underscores) so the jobcard app can read it."""
+    data = request.json
+    contractor_name = data.get("contractor")
+    week_commencing = data.get("week_commencing")
+    note = data.get("note", "").strip()
+
+    if not contractor_name or not week_commencing:
+        return jsonify({"success": False, "error": "Missing contractor or week_commencing"})
+
+    # Derive contractor_key the same way the jobcard app does
+    contractor_key = contractor_name.lower().replace(" ", "_")
+
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        if note:
+            cur.execute("""
+                INSERT INTO contractor_weekly_notes (contractor_key, week_commencing, note, created_by)
+                VALUES (%s, %s, %s, 'admin')
+                ON CONFLICT (contractor_key, week_commencing) DO UPDATE
+                SET note = EXCLUDED.note, updated_at = NOW()
+            """, (contractor_key, week_commencing, note))
+        else:
+            cur.execute("""
+                DELETE FROM contractor_weekly_notes
+                WHERE contractor_key = %s AND week_commencing = %s
+            """, (contractor_key, week_commencing))
+        conn.commit()
+        return jsonify({"success": True})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"success": False, "error": str(e)})
+    finally:
+        cur.close()
+        conn.close()
+
+
+# ── API: Publish / Reopen ─────────────────────────────────────────────────────
 
 @app.route("/api/publish", methods=["POST"])
 @login_required
@@ -356,7 +424,6 @@ def api_publish():
     conn = get_db()
     cur = conn.cursor()
     try:
-        # Check if this is a revision
         cur.execute("SELECT revision_count FROM published_weeks WHERE week_start=%s", (week_start,))
         existing = cur.fetchone()
         is_revision = existing is not None
@@ -369,7 +436,6 @@ def api_publish():
             SET status='published', published_at=NOW(), revision_count=%s
         """, (week_start, rev_count, rev_count))
 
-        # Also write to week_schedules table (read by jobcard app for contractor dashboard)
         try:
             cur.execute("""
                 INSERT INTO week_schedules (week_commencing, status, published_at, published_by)
@@ -383,7 +449,6 @@ def api_publish():
 
         conn.commit()
 
-        # Send emails
         sent = send_schedule_emails(week_start, is_revision=is_revision)
         print(f"Publish complete: sent={sent}, is_revision={is_revision}, week={week_start}")
 
@@ -415,7 +480,6 @@ def api_reopen():
             ON CONFLICT (week_start) DO UPDATE
             SET status='draft', reopened_at=NOW()
         """, (week_start,))
-        # Also update week_schedules
         try:
             cur.execute("""
                 INSERT INTO week_schedules (week_commencing, status)
