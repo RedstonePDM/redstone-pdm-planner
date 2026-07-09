@@ -546,6 +546,7 @@ def api_unallocated_jobs():
                j.description, j.due_date, j.due_time, j.status
         FROM jobs j
         WHERE j.tab IN ('CALLOUT', 'QUOTEREQUEST', 'QUOTE', 'MIV', 'PPM')
+        AND NOT (j.tab = 'QUOTEREQUEST' AND j.sub_tab != 'AWAITINGSUBMISSION')
         ORDER BY j.due_date ASC NULLS LAST, j.tab ASC, j.pub_name ASC
     """)
     jobs = [dict(r) for r in cur.fetchall()]
