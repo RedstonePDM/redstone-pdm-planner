@@ -40,6 +40,25 @@ CONTRACTORS = [
     "Ajax Smartfit",
 ]
 
+
+def get_active_contractors():
+    """Live contractor list, pulled from contractors_db (same table the
+    Contractors admin page writes to) — so anyone added or archived there
+    shows up here immediately without a code change. Falls back to the old
+    hardcoded CONTRACTORS list only if the database lookup itself fails."""
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT name FROM contractors_db WHERE status = 'active' ORDER BY name")
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        names = [r["name"] for r in rows]
+        return names if names else CONTRACTORS
+    except Exception as e:
+        print(f"Live contractor lookup failed, using fallback list: {e}")
+        return CONTRACTORS
+
 # ── Database ──────────────────────────────────────────────────────────────────
 
 def get_db():
@@ -178,6 +197,38 @@ def get_week_dates(week_start):
 def get_current_week_start():
     today = date.today()
     return today - timedelta(days=today.weekday())
+
+
+def format_job_dates(job):
+    """Adds a UK-format display date (due_date_display, DD/MM/YYYY) and a
+    days_since_released pill value to a job dict that has a due_date field.
+    Wisdom's own 'released' date is unreliable/blank on live jobs, so Due
+    Date minus the standard 10-day quote turnaround gives the real release
+    date — same approach used on the jobcard app's Survey Queue page.
+    Leaves the original due_date field as plain ISO text so any existing
+    frontend code that already relies on it keeps working unchanged."""
+    due = job.get("due_date")
+    due_date_obj = None
+    if due:
+        if isinstance(due, str):
+            for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%Y-%m-%dT%H:%M:%S"):
+                try:
+                    due_date_obj = datetime.strptime(due[:19], fmt).date()
+                    break
+                except ValueError:
+                    continue
+        elif hasattr(due, "date"):
+            due_date_obj = due.date()
+        else:
+            due_date_obj = due
+    job["due_date"] = due_date_obj.isoformat() if due_date_obj else None
+    job["due_date_display"] = due_date_obj.strftime("%d/%m/%Y") if due_date_obj else None
+    if due_date_obj:
+        released = due_date_obj - timedelta(days=10)
+        job["days_since_released"] = (date.today() - released).days
+    else:
+        job["days_since_released"] = None
+    return job
 
 
 # ── Email ─────────────────────────────────────────────────────────────────────
@@ -366,7 +417,7 @@ def planner():
 
     return render_template(
         "planner.html",
-        contractors=CONTRACTORS,
+        contractors=get_active_contractors(),
         week_start=week_start_str,
         week_dates=week_dates,
         prev_week=prev_week,
@@ -549,7 +600,7 @@ def api_unallocated_jobs():
         AND NOT (j.tab = 'QUOTEREQUEST' AND j.sub_tab != 'AWAITINGSUBMISSION')
         ORDER BY j.due_date ASC NULLS LAST, j.tab ASC, j.pub_name ASC
     """)
-    jobs = [dict(r) for r in cur.fetchall()]
+    jobs = [format_job_dates(dict(r)) for r in cur.fetchall()]
     cur.close()
     conn.close()
     return jsonify(jobs)
@@ -574,8 +625,7 @@ def api_allocated_jobs():
     for a in allocations:
         if a.get("day_date"):
             a["day_date"] = a["day_date"].isoformat()
-        if a.get("due_date"):
-            a["due_date"] = str(a["due_date"])
+        format_job_dates(a)
     cur.close()
     conn.close()
     return jsonify(allocations)
@@ -690,7 +740,7 @@ def api_get_contractor_days():
 def contractor_week(contractor_slug):
     week_start = request.args.get("week", get_current_week_start().strftime("%Y-%m-%d"))
     contractor = None
-    for c in CONTRACTORS:
+    for c in get_active_contractors():
         if c.lower().replace(" ", "-") == contractor_slug:
             contractor = c
             break
@@ -705,13 +755,13 @@ def contractor_week(contractor_slug):
     cur.execute("""
         SELECT a.id, a.job_id, a.contractor, a.day_date, a.notes, a.is_survey,
                j.display_id, j.tab_label, j.pub_name, j.location_code,
-               j.postcode, j.trade_type, j.description, j.due_time
+               j.postcode, j.trade_type, j.description, j.due_time, j.due_date
         FROM allocations a
         JOIN jobs j ON j.job_id = a.job_id
         WHERE a.week_start=%s AND a.contractor=%s
         ORDER BY a.day_date, a.is_survey, a.sort_order
     """, (week_start, contractor))
-    allocations = [dict(r) for r in cur.fetchall()]
+    allocations = [format_job_dates(dict(r)) for r in cur.fetchall()]
 
     cur.execute("""
         SELECT day_date, status FROM contractor_days
