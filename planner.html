@@ -3,948 +3,166 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Redstone PDM – Weekly Planner</title>
+<title>Pub History — Redstone PDM</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; color: #1a1a2e; font-size: 13px; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; min-height: 100vh; }
+  .topbar {
+    background: #1a2332; color: white; padding: 0 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 56px; position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  .topbar-brand { font-weight: 700; font-size: 18px; cursor: pointer; }
+  .topbar-brand span { color: #c0392b; }
+  .topbar-right a { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 14px; padding: 7px 12px; border-radius: 6px; }
+  .topbar-right a:hover { color: white; background: rgba(255,255,255,0.1); }
 
-/* Header */
-.header { background: #1a1a2e; color: white; padding: 0 20px; height: 52px; display: flex; align-items: center; gap: 20px; position: sticky; top: 0; z-index: 100; }
-.header h1 { font-size: 16px; font-weight: 700; }
-.header .dot { color: #e63946; }
-.week-nav { display: flex; align-items: center; gap: 8px; margin-left: auto; }
-.week-nav a { color: white; text-decoration: none; background: rgba(255,255,255,0.15); padding: 5px 10px; border-radius: 4px; font-size: 12px; }
-.week-nav a:hover { background: rgba(255,255,255,0.25); }
-.week-label { font-size: 13px; font-weight: 600; }
-.btn-logout { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 12px; }
+  .page { max-width: 1400px; margin: 0 auto; padding: 28px 20px; }
+  .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+  h2 { font-size: 22px; color: #1a2332; font-weight: 700; }
+  .page-sub { font-size: 13px; color: #888; margin-top: 4px; }
 
-/* Layout */
-.layout { display: flex; height: calc(100vh - 52px - 64px); }
+  .section-card { background: white; border-radius: 14px; padding: 22px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); margin-bottom: 20px; }
+  .section-title { font-size: 15px; font-weight: 700; color: #1a2332; margin-bottom: 4px; }
 
-/* Sidebar */
-.sidebar { width: 460px; min-width: 460px; background: white; border-right: 1px solid #e0e0e0; display: flex; flex-direction: column; }
-.sidebar-header { padding: 12px 14px; border-bottom: 1px solid #e0e0e0; }
-.sidebar-header h2 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #888; }
-.sidebar-search { padding: 8px 14px; border-bottom: 1px solid #e0e0e0; }
-.sidebar-search input { width: 100%; padding: 7px 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 12px; outline: none; }
-.job-list { flex: 1; overflow-y: auto; padding: 8px; }
-.job-card { background: white; border: 1.5px solid #e0e0e0; border-radius: 6px; padding: 12px 14px; margin-bottom: 10px; cursor: grab; transition: box-shadow 0.15s, border-color 0.15s; user-select: none; min-height: 150px; }
-.job-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-color: #1a1a2e; }
-.job-card.dragging { opacity: 0.5; box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
-.job-card .job-id { font-size: 10px; color: #888; font-family: monospace; }
-.job-card .job-site { font-size: 13px; font-weight: 600; color: #1a1a2e; margin: 3px 0 2px; }
-.job-card .job-trade { font-size: 11px; color: #555; }
-.job-card .job-desc { font-size: 12px; color: #777; margin-top: 5px; line-height: 1.5; max-height: 108px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; }
-.job-card .job-due { font-size: 10px; margin-top: 4px; }
-.job-card .job-due.overdue { color: #e63946; font-weight: 600; }
-.job-card .job-due.soon { color: #f4a261; font-weight: 600; }
-.job-card .job-due.ok { color: #888; }
-.days-pill { display: inline-block; padding: 1px 7px; border-radius: 8px; font-size: 9px; font-weight: 700; margin-top: 3px; margin-right: 4px; }
-.days-pill.green { background: #effdf4; color: #1a7a4a; }
-.days-pill.amber { background: #fff8ef; color: #c77a10; }
-.days-pill.red   { background: #fdf0ef; color: #c0392b; }
-.tag { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; margin-right: 3px; }
-.tag-callout { background: #fff0f0; color: #e63946; }
-.tag-quote { background: #e8f4fd; color: #2196f3; }
-.tag-quoterequest { background: #fff8e1; color: #f57c00; }
-.tag-miv { background: #f3e5f5; color: #9c27b0; }
-.tag-ppm { background: #e8f5e9; color: #388e3c; }
+  .headline-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+  .hl-box { background: #fafbfc; border: 1.5px solid #f0f2f5; border-radius: 10px; padding: 16px 18px; }
+  .hl-label { font-size: 11px; color: #888; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
+  .hl-value { font-size: 24px; color: #1a2332; font-weight: 800; margin-top: 5px; }
+  .hl-note { font-size: 11px; color: #aaa; margin-top: 3px; }
 
-/* Grid */
-.grid-wrapper { flex: 1; overflow: auto; }
-.grid { min-width: max-content; }
+  .win-pill { display: inline-block; padding: 3px 9px; border-radius: 10px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+  .win-pill.high { background: #effdf4; color: #1a7a4a; }
+  .win-pill.mid  { background: #fff8ef; color: #c77a10; }
+  .win-pill.low  { background: #fdf0ef; color: #c0392b; }
+  .win-pill.none { background: #f0f2f5; color: #888; }
 
-.grid-head { display: grid; position: sticky; top: 0; z-index: 50; background: white; border-bottom: 2px solid #e0e0e0; box-shadow: 0 2px 4px rgba(0,0,0,0.06); }
-.grid-head .corner { width: 110px; min-width: 110px; padding: 10px 8px; font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; }
-.grid-head .col-head { padding: 8px 10px; min-width: 170px; border-left: 1px solid #e8e8e8; }
-.col-head .name { font-size: 12px; font-weight: 700; color: #1a1a2e; }
-.col-head .job-count { font-size: 10px; color: #888; margin-top: 1px; }
+  .qm-pill { display: inline-block; padding: 3px 9px; border-radius: 10px; font-size: 11px; font-weight: 700; background: #fdf0ef; color: #c0392b; white-space: nowrap; }
 
-.day-row { display: grid; border-bottom: 1px solid #e8e8e8; }
-.day-label { width: 110px; min-width: 110px; padding: 8px; background: white; border-right: 2px solid #e0e0e0; position: sticky; left: 0; z-index: 10; }
-.day-label .day-name { font-size: 12px; font-weight: 700; color: #1a1a2e; }
-.day-label .day-date { font-size: 10px; color: #888; }
-.day-label.today .day-name { color: #e63946; }
+  .trade-chip { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 10px; font-weight: 600; background: #f4efff; color: #6c3fc5; margin: 1px 3px 1px 0; white-space: nowrap; }
 
-.cell { min-width: 170px; min-height: 80px; padding: 6px; border-left: 1px solid #e8e8e8; background: #fafafa; vertical-align: top; position: relative; transition: background 0.15s; }
-.cell.drag-over { background: #e8f4fd; border: 2px dashed #2196f3; }
-.cell.day-off { background: #f5f5f5; }
-.cell.day-off::after { content: 'OFF'; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 10px; font-weight: 700; color: #ccc; letter-spacing: 2px; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 11px; text-transform: uppercase; color: #888; padding: 8px 10px; border-bottom: 1.5px solid #eee; cursor: default; }
+  td { font-size: 13px; padding: 10px; border-bottom: 1px solid #f5f5f5; vertical-align: top; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr:hover { background: #fafbfc; }
 
-.alloc-card { background: white; border: 1.5px solid #e0e0e0; border-radius: 5px; padding: 6px 8px; margin-bottom: 4px; position: relative; }
-.alloc-card.is-survey { border-left: 3px solid #f4a261; background: #fffaf5; }
-.alloc-card .alloc-id { font-size: 10px; color: #888; font-family: monospace; }
-.alloc-card .alloc-site { font-size: 11px; font-weight: 600; color: #1a1a2e; }
-.alloc-card .alloc-trade { font-size: 10px; color: #666; }
-.alloc-card .alloc-notes { font-size: 10px; color: #e63946; font-style: italic; margin-top: 2px; }
-.alloc-card .btn-remove { position: absolute; top: 4px; right: 4px; background: none; border: none; color: #ccc; cursor: pointer; font-size: 14px; line-height: 1; padding: 0 2px; }
-.alloc-card .btn-remove:hover { color: #e63946; }
-.alloc-card .btn-notes { background: none; border: none; color: #aaa; cursor: pointer; font-size: 10px; padding: 0; margin-top: 2px; }
-.alloc-card .alloc-desc { font-size: 10px; color: #555; margin-top: 2px; line-height: 1.3; }
-.alloc-card .btn-notes:hover { color: #1a1a2e; }
+  .pub-name { font-weight: 700; color: #1a2332; }
+  .count-cell { font-weight: 700; }
+  .count-cell.wins { color: #1a7a4a; }
+  .count-cell.losses { color: #c0392b; }
+  .count-cell.cancellations { color: #c77a10; }
+  .count-cell.declined { color: #888; }
 
-.day-off-toggle { position: absolute; bottom: 4px; right: 4px; }
-.day-off-toggle button { background: none; border: 1px solid #e0e0e0; border-radius: 4px; font-size: 9px; padding: 2px 5px; cursor: pointer; color: #aaa; }
-.day-off-toggle button:hover { background: #f5f5f5; color: #666; }
-
-/* ── Job Status Pills ── */
-.status-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
-.status-pill-btn {
-  padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;
-  cursor: pointer; border: 1.5px solid transparent; transition: all 0.15s;
-  user-select: none;
-}
-.status-pill-btn.awaiting-parts   { background: #fff8e1; color: #e65100; border-color: #ffcc02; }
-.status-pill-btn.awaiting-date    { background: #fff3e0; color: #bf360c; border-color: #ffab40; }
-.status-pill-btn.pencilled        { background: #e3f2fd; color: #1565c0; border-color: #64b5f6; }
-.status-pill-btn.needs-signoff    { background: #f3e5f5; color: #6a1b9a; border-color: #ce93d8; }
-.status-pill-btn.cancel-duplicate { background: #fdf0ef; color: #c0392b; border-color: #ef9a9a; }
-.status-pill-btn.ready            { background: #e8f5e9; color: #1b5e20; border-color: #81c784; }
-.status-pill-btn.active { opacity: 1; box-shadow: 0 0 0 2px currentColor; }
-.status-pill-btn:not(.active) { opacity: 0.45; }
-
-/* Sidebar mini pills */
-.mini-pill {
-  display: inline-block; padding: 1px 5px; border-radius: 6px;
-  font-size: 9px; font-weight: 700; margin-left: 3px; vertical-align: middle;
-}
-.mini-pill.awaiting-parts   { background: #fff8e1; color: #e65100; }
-.mini-pill.awaiting-date    { background: #fff3e0; color: #bf360c; }
-.mini-pill.pencilled        { background: #e3f2fd; color: #1565c0; }
-.mini-pill.needs-signoff    { background: #f3e5f5; color: #6a1b9a; }
-.mini-pill.cancel-duplicate { background: #fdf0ef; color: #c0392b; }
-.mini-pill.ready            { background: #e8f5e9; color: #1b5e20; }
-
-/* Drawer enhancements */
-.drawer-section { margin-top: 14px; border-top: 1px solid #f0f0f0; padding-top: 12px; }
-.drawer-section-label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #aaa; margin-bottom: 8px; letter-spacing: 0.4px; }
-.drawer-notes-area {
-  width: 100%; min-height: 80px; padding: 8px 10px;
-  border: 1.5px solid #e0e0e0; border-radius: 6px;
-  font-size: 12px; font-family: inherit; color: #1a2332;
-  resize: vertical; outline: none; line-height: 1.5;
-  transition: border-color 0.15s;
-}
-.drawer-notes-area:focus { border-color: #1a1a2e; }
-.pencilled-input {
-  width: 100%; padding: 7px 10px; border: 1.5px solid #e0e0e0; border-radius: 6px;
-  font-size: 12px; font-family: inherit; outline: none; margin-top: 6px;
-  transition: border-color 0.15s;
-}
-.pencilled-input:focus { border-color: #1a1a2e; }
-.drawer-save-btn {
-  margin-top: 10px; width: 100%; padding: 8px; border: none; border-radius: 6px;
-  background: #1a1a2e; color: white; font-size: 12px; font-weight: 700;
-  cursor: pointer; transition: background 0.15s;
-}
-.drawer-save-btn:hover { background: #c0392b; }
-.drawer-saved-msg { font-size: 11px; color: #1a7a4a; margin-top: 6px; text-align: center; display: none; }
-
-/* ── Planner Notes Row ── *//* ── Planner Notes Row ── */
-.notes-row { display: grid; border-bottom: 2px solid #e0e0e0; background: #f8f9fb; }
-.notes-row-label {
-  width: 110px; min-width: 110px; padding: 8px;
-  background: #f8f9fb; border-right: 2px solid #e0e0e0;
-  position: sticky; left: 0; z-index: 10;
-  display: flex; align-items: flex-start; padding-top: 10px;
-}
-.notes-row-label span { font-size: 10px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 0.4px; }
-.notes-cell { min-width: 170px; padding: 6px; border-left: 1px solid #e8e8e8; }
-.planner-note-area {
-  width: 100%; min-height: 58px; padding: 6px 8px;
-  border: 1.5px solid #e8e8e8; border-radius: 5px;
-  font-size: 11px; font-family: inherit; color: #1a2332;
-  background: white; resize: vertical; outline: none;
-  line-height: 1.4; transition: border-color 0.15s;
-}
-.planner-note-area:focus { border-color: #c0392b; }
-.planner-note-area::placeholder { color: #ccc; }
-.note-save-btn {
-  display: block; margin-top: 4px; padding: 3px 10px;
-  background: #1a2332; color: white; border: none; border-radius: 4px;
-  font-size: 10px; font-weight: 600; cursor: pointer; opacity: 0;
-  transition: opacity 0.15s;
-}
-.notes-cell:focus-within .note-save-btn { opacity: 1; }
-.note-save-btn:hover { background: #c0392b; }
-.note-saved-indicator { font-size: 10px; color: #1a7a4a; margin-top: 3px; display: none; }
-
-/* ── Publish Bar ── */
-.publish-bar {
-  position: fixed; bottom: 0; left: 0; right: 0; height: 64px;
-  background: #1a1a2e; border-top: 3px solid #c0392b;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 24px; z-index: 200;
-  box-shadow: 0 -4px 16px rgba(0,0,0,0.2);
-}
-.publish-bar-left { display: flex; align-items: center; gap: 16px; }
-.publish-status-pill { padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; }
-.publish-status-pill.draft     { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.7); }
-.publish-status-pill.published { background: #1a7a4a; color: white; }
-.publish-label { color: rgba(255,255,255,0.6); font-size: 12px; }
-.revision-note { color: #f4a261; font-size: 11px; font-style: italic; }
-
-.publish-bar-right { display: flex; gap: 10px; align-items: center; }
-
-.btn-publish {
-  padding: 10px 24px; border-radius: 8px; font-size: 13px; font-weight: 700;
-  cursor: pointer; border: none; background: #c0392b; color: white;
-  transition: background 0.15s;
-}
-.btn-publish:hover { background: #a93226; }
-.btn-publish:disabled { background: #555; color: #999; cursor: not-allowed; }
-
-.btn-reopen {
-  padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600;
-  cursor: pointer; border: 1.5px solid rgba(255,255,255,0.2); background: transparent; color: rgba(255,255,255,0.8);
-  transition: all 0.15s;
-}
-.btn-reopen:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.4); }
-
-/* Modal */
-.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300; align-items: center; justify-content: center; }
-.modal-overlay.active { display: flex; }
-.modal { background: white; border-radius: 10px; padding: 24px; width: 440px; max-width: 95vw; }
-.modal h3 { font-size: 15px; font-weight: 700; margin-bottom: 16px; }
-.modal label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 6px; }
-.modal textarea { width: 100%; padding: 10px; border: 1.5px solid #e0e0e0; border-radius: 6px; font-size: 13px; resize: vertical; min-height: 80px; outline: none; font-family: inherit; }
-.modal textarea:focus { border-color: #1a1a2e; }
-.modal-actions { display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end; }
-.btn { padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; }
-.btn-primary { background: #1a1a2e; color: white; }
-.btn-primary:hover { background: #16213e; }
-.btn-secondary { background: #f0f0f0; color: #444; }
-.btn-secondary:hover { background: #e0e0e0; }
-.modal-check { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 13px; }
-
-/* Confirm modal */
-.confirm-modal { background: white; border-radius: 12px; padding: 28px; width: 420px; max-width: 95vw; }
-.confirm-modal h3 { font-size: 17px; font-weight: 700; color: #1a1a2e; margin-bottom: 10px; }
-.confirm-modal p { font-size: 13px; color: #555; line-height: 1.6; margin-bottom: 18px; }
-.confirm-modal .confirm-actions { display: flex; gap: 10px; justify-content: flex-end; }
-.btn-confirm-publish { padding: 10px 22px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; border: none; background: #c0392b; color: white; }
-.btn-confirm-publish:hover { background: #a93226; }
-.btn-cancel-confirm  { padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; background: #f0f0f0; color: #333; }
-
-/* Job detail panel */
-.job-detail { display: none; position: fixed; right: 0; top: 52px; width: 360px; height: calc(100vh - 52px - 64px); background: white; border-left: 1px solid #e0e0e0; z-index: 90; overflow-y: auto; padding: 16px; box-shadow: -4px 0 12px rgba(0,0,0,0.08); }
-.job-detail.active { display: block; }
-.job-detail .close { float: right; background: none; border: none; font-size: 18px; cursor: pointer; color: #888; }
-.job-detail h3 { font-size: 14px; font-weight: 700; margin-bottom: 12px; }
-.detail-row { margin-bottom: 10px; }
-.detail-row .label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #888; margin-bottom: 2px; }
-.detail-row .value { font-size: 13px; color: #1a1a2e; line-height: 1.5; }
-
-.loading { text-align: center; padding: 40px; color: #888; font-size: 13px; }
-.count-badge { display: inline-block; background: #e63946; color: white; border-radius: 10px; padding: 1px 6px; font-size: 10px; font-weight: 700; margin-left: 4px; }
-
-.sidebar-tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px; border-bottom: 1px solid #e0e0e0; background: #fafafa; }
-.stab {
-  flex: 1; min-width: 0; padding: 7px 4px 6px;
-  border: 1px solid #e8e8e8; border-radius: 6px;
-  background: white; cursor: pointer; color: #999;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  transition: all 0.15s; display: flex; flex-direction: column;
-  align-items: center; gap: 1px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-}
-.stab:hover { border-color: #bbb; color: #1a1a2e; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-.stab-label { font-size: 9px; font-weight: 600; letter-spacing: 0.3px; text-transform: uppercase; line-height: 1; }
-.stab-count { font-size: 15px; font-weight: 700; line-height: 1.2; }
-
-/* Active state — background matches the tag colour for each tab */
-#tab-CALLOUT.active     { background: #fff0f0; border-color: #e63946; color: #e63946; }
-#tab-QUOTE.active       { background: #e8f4fd; border-color: #2196f3; color: #2196f3; }
-#tab-MIV.active         { background: #f3e5f5; border-color: #9c27b0; color: #9c27b0; }
-#tab-PPM.active         { background: #e8f5e9; border-color: #388e3c; color: #388e3c; }
-#tab-QUOTEREQUEST.active { background: #fff8e1; border-color: #f57c00; color: #f57c00; }
+  .empty-state { text-align: center; padding: 30px; color: #aaa; font-size: 14px; }
+  .search-box {
+    padding: 8px 14px; border-radius: 20px; border: 1.5px solid #e0e0e0;
+    font-size: 13px; width: 260px; outline: none;
+  }
+  .search-box:focus { border-color: #1a2332; }
 </style>
 </head>
 <body>
 
-<div class="header">
-  <h1>Redstone<span class="dot">.</span>PDM</h1>
-  <span style="color:rgba(255,255,255,0.4);font-size:12px;">Weekly Planner</span>
-  <div class="week-nav">
-    <a href="/?week={{ prev_week }}">← Prev</a>
-    <span class="week-label">w/c {{ week_dates[0].strftime('%d %b %Y') }}</span>
-    <a href="/?week={{ next_week }}">Next →</a>
+<div class="topbar">
+  <div class="topbar-brand" onclick="location.href='/admin'">Redstone <span>PDM</span></div>
+  <div class="topbar-right">
+    <a href="/admin">← Home</a>
+    <a href="/admin/reports">Quote Analytics</a>
+    <a href="/admin/survey-queue">Survey Queue</a>
+    <a href="/admin/awaiting-approval">Awaiting Approval</a>
   </div>
-  <a href="/logout" class="btn-logout">Sign out</a>
 </div>
 
-<div class="layout">
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <div class="sidebar-header">
-      <h2>Unallocated Jobs <span class="count-badge" id="unallocated-count">0</span></h2>
+<div class="page">
+
+  <div class="page-header">
+    <div>
+      <h2>Pub History</h2>
+      <div class="page-sub">Every pub Redstone has ever quoted for — total quotes, win/loss record, and what's currently live. "Quote Machine" flags a high rate of lost/cancelled quotes, not just a high volume — a busy pub that mostly goes ahead isn't a problem. Historic totals will keep filling in as more decisions get logged over time.</div>
     </div>
-    <div class="sidebar-search">
-      <input type="text" id="search-input" placeholder="Search..." oninput="filterJobs()">
-    </div>
-    <div class="sidebar-tabs">
-      <button class="stab active" onclick="setTab('CALLOUT')" id="tab-CALLOUT"><span class="stab-count" id="stab-count-CALLOUT">0</span><span class="stab-label">Callouts</span></button>
-      <button class="stab" onclick="setTab('QUOTE')" id="tab-QUOTE"><span class="stab-count" id="stab-count-QUOTE">0</span><span class="stab-label">Quotes</span></button>
-      <button class="stab" onclick="setTab('MIV')" id="tab-MIV"><span class="stab-count" id="stab-count-MIV">0</span><span class="stab-label">MIV</span></button>
-      <button class="stab" onclick="setTab('PPM')" id="tab-PPM"><span class="stab-count" id="stab-count-PPM">0</span><span class="stab-label">PPM</span></button>
-      <button class="stab" onclick="setTab('QUOTEREQUEST')" id="tab-QUOTEREQUEST"><span class="stab-count" id="stab-count-QUOTEREQUEST">0</span><span class="stab-label">Requests</span></button>
-    </div>
-    <div class="job-list" id="job-list">
-      <div class="loading">Loading jobs...</div>
-    </div>
+    <input type="text" class="search-box" id="searchBox" placeholder="Search pub name..." onkeyup="filterPubs()">
   </div>
 
-  <!-- Grid -->
-  <div class="grid-wrapper">
-    <div class="grid" id="grid">
-      <div class="grid-head" id="grid-head" style="grid-template-columns: 110px repeat({{ contractors|length }}, 170px);">
-        <div class="corner">Day</div>
-        {% for c in contractors %}
-        <div class="col-head">
-          <div class="name">{{ c.split()[0] }} {{ c.split()[1][0] if c.split()|length > 1 else '' }}.</div>
-          <div class="job-count" id="count-{{ loop.index0 }}">0 jobs</div>
-        </div>
-        {% endfor %}
+  <div class="section-card">
+    <div class="headline-grid">
+      <div class="hl-box">
+        <div class="hl-label">Pubs Tracked</div>
+        <div class="hl-value">{{ total_pubs }}</div>
+        <div class="hl-note">Every site with at least one quote, ever</div>
       </div>
-
-      {% for day in week_dates %}
-      {% set day_str = day.strftime('%Y-%m-%d') %}
-      <div class="day-row" style="grid-template-columns: 110px repeat({{ contractors|length }}, 170px);">
-        <div class="day-label" id="daylabel-{{ day_str }}">
-          <div class="day-name">{{ day.strftime('%A') }}</div>
-          <div class="day-date">{{ day.strftime('%d %b') }}</div>
-        </div>
-        {% for c in contractors %}
-        {% set slug = c.lower().replace(' ', '-') %}
-        <div class="cell"
-          id="cell-{{ slug }}-{{ day_str }}"
-          data-contractor="{{ c }}"
-          data-date="{{ day_str }}"
-          ondragover="onDragOver(event)"
-          ondragleave="onDragLeave(event)"
-          ondrop="onDrop(event)">
-          <div class="day-off-toggle">
-            <button onclick="toggleDayOff('{{ c }}', '{{ day_str }}', this)" title="Toggle day off">Off</button>
-          </div>
-        </div>
-        {% endfor %}
+      <div class="hl-box">
+        <div class="hl-label">Value Awaiting Approval</div>
+        <div class="hl-value">£{{ '{:,.2f}'.format(total_awaiting_approval_value) }}</div>
+        <div class="hl-note">Across all pubs right now</div>
       </div>
-      {% endfor %}
+    </div>
+  </div>
 
-      <!-- ── Planner Notes Row ── -->
-      <div class="notes-row" style="grid-template-columns: 110px repeat({{ contractors|length }}, 170px);">
-        <div class="notes-row-label">
-          <span>📝 Notes</span>
-        </div>
-        {% for c in contractors %}
-        {% set contractor_key = c.lower().replace(' ', '_') %}
-        <div class="notes-cell">
-          <textarea
-            class="planner-note-area"
-            id="planner-note-{{ contractor_key }}"
-            data-contractor="{{ c }}"
-            data-key="{{ contractor_key }}"
-            placeholder="Planning notes for {{ c.split()[0] }}…"
-            onkeydown="handleNoteKey(event, '{{ c }}')"
-          >{{ planner_notes.get(contractor_key, '') }}</textarea>
-          <button class="note-save-btn" onclick="savePlannerNote('{{ c }}')">Save</button>
-          <div class="note-saved-indicator" id="note-saved-{{ contractor_key }}">✓ Saved</div>
-        </div>
+  <div class="section-card">
+    <div class="section-title">All Pubs — sorted by total quotes, busiest first</div>
+    {% if pubs %}
+    <table id="pubTable">
+      <thead>
+        <tr>
+          <th>Pub</th>
+          <th>Total Quotes</th>
+          <th>Won</th>
+          <th>Lost</th>
+          <th>Cancelled</th>
+          <th>Declined</th>
+          <th>Win Rate</th>
+          <th>Live: Awaiting Submission</th>
+          <th>Live: Awaiting Approval</th>
+          <th class="num">Awaiting Approval Value</th>
+          <th>Trade Types</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in pubs %}
+        <tr class="pub-row" data-name="{{ p.pub_name|lower }}">
+          <td>
+            <a href="/admin/pub-detail/{{ p.pub_key }}" class="pub-name" style="text-decoration:none">{{ p.pub_name }} →</a>
+            {% if p.is_quote_machine %}<span class="qm-pill">⚠ Quote Machine — {{ p.waste_rate_pct }}% lost/cancelled</span>{% endif %}
+          </td>
+          <td>{{ p.total_quotes }}</td>
+          <td class="count-cell wins">{{ p.wins }}</td>
+          <td class="count-cell losses">{{ p.losses }}</td>
+          <td class="count-cell cancellations">{{ p.cancellations }}</td>
+          <td class="count-cell declined">{{ p.declined }}</td>
+          <td>
+            {% if p.win_rate_pct is not none %}
+            <span class="win-pill {{ 'high' if p.win_rate_pct >= 60 else ('mid' if p.win_rate_pct >= 30 else 'low') }}">{{ p.win_rate_pct }}% ({{ p.decided_sample }})</span>
+            {% else %}
+            <span class="win-pill none">No decided history</span>
+            {% endif %}
+          </td>
+          <td>{{ p.awaiting_submission if p.awaiting_submission else '—' }}</td>
+          <td>{{ p.awaiting_approval if p.awaiting_approval else '—' }}</td>
+          <td class="num">{% if p.awaiting_approval_value %}£{{ '{:,.2f}'.format(p.awaiting_approval_value) }}{% else %}—{% endif %}</td>
+          <td>
+            {% for trade, cnt in p.top_trades[:4] %}<span class="trade-chip">{{ trade }} ({{ cnt }})</span>{% endfor %}
+          </td>
+        </tr>
         {% endfor %}
-      </div>
-
-    </div>
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">No pub history recorded yet.</div>
+    {% endif %}
   </div>
-</div>
 
-<!-- ── Publish Bar ── -->
-<div class="publish-bar" id="publish-bar">
-  <div class="publish-bar-left">
-    <span class="publish-label">Week status:</span>
-    <span class="publish-status-pill" id="publish-pill">Loading...</span>
-    <span class="revision-note" id="revision-note" style="display:none"></span>
-  </div>
-  <div class="publish-bar-right">
-    <button class="btn-reopen" id="btn-reopen" style="display:none" onclick="confirmReopen()">
-      ✏ Re-open for Editing
-    </button>
-    <button class="btn-publish" id="btn-publish" onclick="confirmPublish()">
-      📤 Publish Schedule
-    </button>
-  </div>
-</div>
-
-<!-- Notes Modal -->
-<div class="modal-overlay" id="notes-modal">
-  <div class="modal">
-    <h3>Edit Notes</h3>
-    <div class="modal-check">
-      <input type="checkbox" id="modal-survey" onchange="updateModalSurvey()">
-      <label for="modal-survey">This is a survey visit</label>
-    </div>
-    <label>Notes for contractor</label>
-    <textarea id="modal-notes" placeholder="Add instructions, coordination notes, materials required..."></textarea>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeNotesModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="saveNotes()">Save</button>
-    </div>
-  </div>
-</div>
-
-<!-- Confirm Publish Modal -->
-<div class="modal-overlay" id="confirm-modal">
-  <div class="confirm-modal">
-    <h3 id="confirm-title">Publish Schedule?</h3>
-    <p id="confirm-body">This will send the week's job schedule to all allocated engineers by email and lock the planner. You can re-open it for edits and republish if needed.</p>
-    <div class="confirm-actions">
-      <button class="btn-cancel-confirm" onclick="closeConfirmModal()">Cancel</button>
-      <button class="btn-confirm-publish" id="confirm-action-btn" onclick="doPublish()">Send & Publish</button>
-    </div>
-  </div>
-</div>
-
-<!-- Job Detail Panel -->
-<div class="job-detail" id="job-detail">
-  <button class="close" onclick="closeDetail()">×</button>
-  <h3 id="detail-title">Job Details</h3>
-  <div id="detail-content"></div>
 </div>
 
 <script>
-const WEEK_START = "{{ week_start }}";
-const CONTRACTORS = {{ contractors | tojson }};
-let allJobs = [];
-let allocations = [];
-let dragJobId = null;
-let currentNotesAllocId = null;
-let dayStatuses = {};
-let activeTab = 'CALLOUT';
-let weekStatus = "{{ week_status }}";
-let revisionCount = {{ revision_count }};
-
-// ── Init ──────────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  loadData();
-  loadJobNotesBulk();
-  updatePublishBar();
-});
-
-async function loadData() {
-  await Promise.all([loadJobs(), loadAllocations(), loadDayStatuses()]);
-  renderGrid();
-}
-
-// ── Load Data ─────────────────────────────────────────────────────────────────
-async function loadJobs() {
-  const res = await fetch(`/api/jobs/unallocated?week=${WEEK_START}`);
-  allJobs = await res.json();
-  renderSidebar();
-}
-
-async function loadAllocations() {
-  const res = await fetch(`/api/jobs/allocated?week=${WEEK_START}`);
-  allocations = await res.json();
-}
-
-async function loadDayStatuses() {
-  const res = await fetch(`/api/contractor-days?week=${WEEK_START}`);
-  dayStatuses = await res.json();
-}
-
-// ── Planner Notes ─────────────────────────────────────────────────────────────
-function handleNoteKey(event, contractor) {
-  // Tab key moves to next contractor's note textarea rather than inserting a tab
-  if (event.key === 'Tab') {
-    event.preventDefault();
-    const contractorKey = contractor.toLowerCase().replace(/ /g, '_');
-    const allNotes = document.querySelectorAll('.planner-note-area');
-    const arr = Array.from(allNotes);
-    const idx = arr.findIndex(el => el.dataset.key === contractorKey);
-    // Save current note first
-    savePlannerNote(contractor);
-    // Focus next
-    const next = arr[idx + 1];
-    if (next) next.focus();
-  }
-}
-
-async function savePlannerNote(contractor) {
-  const contractorKey = contractor.toLowerCase().replace(/ /g, '_');
-  const textarea = document.getElementById('planner-note-' + contractorKey);
-  if (!textarea) return;
-  const note = textarea.value.trim();
-
-  const res = await fetch('/api/planner_note', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ contractor, week_commencing: WEEK_START, note })
-  });
-  const data = await res.json();
-
-  if (data.success) {
-    const indicator = document.getElementById('note-saved-' + contractorKey);
-    if (indicator) {
-      indicator.style.display = 'block';
-      setTimeout(() => { indicator.style.display = 'none'; }, 2000);
-    }
-  }
-}
-
-// ── Publish Bar ───────────────────────────────────────────────────────────────
-function updatePublishBar() {
-  const pill      = document.getElementById('publish-pill');
-  const btnPub    = document.getElementById('btn-publish');
-  const btnReopen = document.getElementById('btn-reopen');
-  const revNote   = document.getElementById('revision-note');
-
-  if (weekStatus === 'published') {
-    pill.textContent = '✓ Published';
-    pill.className = 'publish-status-pill published';
-    btnPub.textContent = '📤 Republish (Send Revision)';
-    btnReopen.style.display = 'inline-block';
-    if (revisionCount > 0) {
-      revNote.textContent = `Revision ${revisionCount} sent`;
-      revNote.style.display = 'inline';
-    }
-  } else {
-    pill.textContent = '⏳ Draft';
-    pill.className = 'publish-status-pill draft';
-    btnPub.textContent = '📤 Publish Schedule';
-    btnReopen.style.display = 'none';
-    revNote.style.display = 'none';
-  }
-}
-
-function confirmPublish() {
-  const title = document.getElementById('confirm-title');
-  const body  = document.getElementById('confirm-body');
-  const btn   = document.getElementById('confirm-action-btn');
-
-  if (weekStatus === 'published') {
-    title.textContent = 'Send Revised Schedule?';
-    body.textContent = 'This will send an updated schedule to all engineers with a clear "⚠ REVISED SCHEDULE" banner so they know to re-check their jobs.';
-    btn.textContent = '⚠ Send Revision';
-  } else {
-    title.textContent = 'Publish Schedule?';
-    body.textContent = "This will send the week's job schedule to all allocated engineers by email and lock the planner. You can re-open it for edits and republish if needed.";
-    btn.textContent = '📤 Send & Publish';
-  }
-  document.getElementById('confirm-modal').classList.add('active');
-}
-
-function closeConfirmModal() {
-  document.getElementById('confirm-modal').classList.remove('active');
-}
-
-async function doPublish() {
-  const btn = document.getElementById('confirm-action-btn');
-  btn.disabled = true;
-  btn.textContent = 'Sending...';
-
-  const res = await fetch('/api/publish', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ week_start: WEEK_START })
-  });
-  const data = await res.json();
-
-  closeConfirmModal();
-
-  if (data.success) {
-    weekStatus = 'published';
-    revisionCount = data.revision_count || 0;
-    updatePublishBar();
-    const msg = data.is_revision
-      ? `✓ Revision sent to ${data.emails_sent} engineer${data.emails_sent !== 1 ? 's' : ''}`
-      : `✓ Schedule published — ${data.emails_sent} email${data.emails_sent !== 1 ? 's' : ''} sent`;
-    showToast(msg, 'green');
-  } else {
-    showToast('Error: ' + (data.error || 'Unknown error'), 'red');
-  }
-
-  btn.disabled = false;
-}
-
-function confirmReopen() {
-  if (!confirm('Re-open this week for editing? Engineers will NOT be notified — republish when done to send the revision.')) return;
-  doReopen();
-}
-
-async function doReopen() {
-  const res = await fetch('/api/reopen', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ week_start: WEEK_START })
-  });
-  const data = await res.json();
-  if (data.success) {
-    weekStatus = 'draft';
-    updatePublishBar();
-    showToast('Week re-opened for editing', 'blue');
-  }
-}
-
-function showToast(msg, colour) {
-  const colours = { green: '#1a7a4a', red: '#c0392b', blue: '#1a4fa0' };
-  const toast = document.createElement('div');
-  toast.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
-    background:${colours[colour]||'#1a2332'};color:white;padding:12px 24px;border-radius:8px;
-    font-size:13px;font-weight:600;z-index:500;box-shadow:0 4px 16px rgba(0,0,0,0.3);
-    transition:opacity 0.3s`;
-  toast.textContent = msg;
-  document.body.appendChild(toast);
-  setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
-}
-
-// ── Sidebar ───────────────────────────────────────────────────────────────────
-function setTab(tab) {
-  activeTab = tab;
-  document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-' + tab).classList.add('active');
-  renderSidebar();
-}
-
-function renderSidebar() {
-  const list = document.getElementById('job-list');
-  const query = document.getElementById('search-input').value.toLowerCase();
-  const tabMap = {
-    'CALLOUT': ['CALLOUT'], 'QUOTE': ['QUOTE'], 'MIV': ['MIV'],
-    'PPM': ['PPM'], 'QUOTEREQUEST': ['QUOTEREQUEST'],
-  };
-  const allowedTabs = tabMap[activeTab] || [activeTab];
-
-  ['CALLOUT','QUOTE','MIV','PPM','QUOTEREQUEST'].forEach(function(t) {
-    const count = allJobs.filter(function(j){ return (tabMap[t]||[t]).includes(j.tab); }).length;
-    const el = document.getElementById('stab-count-' + t);
-    if (el) el.textContent = count;
-  });
-
-  document.getElementById('unallocated-count').textContent = allJobs.length;
-
-  let filtered = allJobs.filter(function(j){ return allowedTabs.includes(j.tab); });
-  if (activeTab === 'PPM') filtered = filtered.slice(0, 10);
-  if (query) {
-    filtered = filtered.filter(function(j) {
-      return (j.pub_name||'').toLowerCase().includes(query) ||
-        (j.display_id||'').toLowerCase().includes(query) ||
-        (j.trade_type||'').toLowerCase().includes(query) ||
-        (j.description||'').toLowerCase().includes(query);
+  function filterPubs() {
+    const q = document.getElementById('searchBox').value.toLowerCase();
+    document.querySelectorAll('.pub-row').forEach(row => {
+      row.style.display = row.dataset.name.includes(q) ? '' : 'none';
     });
   }
-
-  if (filtered.length === 0) {
-    list.innerHTML = '<div class="loading">No ' + activeTab.toLowerCase() + ' jobs</div>';
-    return;
-  }
-
-  list.innerHTML = filtered.map(function(j) {
-    const tab = (j.tab||'').toLowerCase();
-    const dueClass = getDueClass(j.due_date);
-    const dueLabel = j.due_date_display ? 'Due: ' + j.due_date_display : (j.due_date ? 'Due: ' + j.due_date : '');
-    const daysPill = getDaysPill(j.days_since_released);
-    const desc = (j.description||'').substring(0,80) + ((j.description||'').length > 80 ? '...' : '');
-    const postcode = j.postcode ? ' · ' + j.postcode : '';
-    const detailJson = JSON.stringify(j).replace(/"/g,'&quot;');
-    const miniPills = getMiniPills(j.job_id);
-    return '<div class="job-card" draggable="true" data-job-id="' + j.job_id + '" ondragstart="onJobDragStart(event,\'' + j.job_id + '\')" onclick="showDetail(' + detailJson + ')">' +
-      '<div><span class="tag tag-' + tab + '">' + tab.toUpperCase() + '</span><span class="job-id">' + (j.display_id||j.job_id) + '</span>' + miniPills + '</div>' +
-      '<div class="job-site">' + (j.pub_name||'—') + '</div>' +
-      '<div class="job-trade">' + (j.trade_type||'') + postcode + '</div>' +
-      '<div class="job-desc">' + desc + '</div>' +
-      (dueLabel ? '<div class="job-due ' + dueClass + '">' + dueLabel + '</div>' : '') +
-      daysPill +
-      '</div>';
-  }).join('');
-}
-
-function filterJobs() { renderSidebar(); }
-
-function getDueClass(due) {
-  if (!due) return 'ok';
-  const diff = (new Date(due) - new Date()) / 86400000;
-  if (diff < 0) return 'overdue';
-  if (diff < 3) return 'soon';
-  return 'ok';
-}
-
-// Days-since-released pill — how long since the quote/job was actually
-// released (Due Date minus the standard 10-day turnaround), so it's easy to
-// spot which jobs are getting urgent regardless of which day they're due.
-function getDaysPill(days) {
-  if (days === null || days === undefined) return '';
-  const cls = days >= 8 ? 'red' : (days >= 4 ? 'amber' : 'green');
-  return '<span class="days-pill ' + cls + '">' + days + 'd since release</span>';
-}
-
-// ── Grid ──────────────────────────────────────────────────────────────────────
-function renderGrid() {
-  for (const [key, status] of Object.entries(dayStatuses)) {
-    const parts = key.split('_');
-    const date = parts[parts.length - 1];
-    const contractor = parts.slice(0, -1).join('_');
-    const slug = contractor.toLowerCase().replace(/ /g, '-');
-    const cell = document.getElementById(`cell-${slug}-${date}`);
-    if (cell) {
-      cell.classList.toggle('day-off', status === 'off');
-    }
-  }
-
-  document.querySelectorAll('.alloc-card').forEach(c => c.remove());
-
-  const counts = {};
-  for (const a of allocations) {
-    const slug = a.contractor.toLowerCase().replace(/ /g, '-');
-    const cell = document.getElementById(`cell-${slug}-${a.day_date}`);
-    if (!cell) continue;
-    counts[a.contractor] = (counts[a.contractor] || 0) + 1;
-
-    const card = document.createElement('div');
-    card.className = 'alloc-card' + (a.is_survey ? ' is-survey' : '');
-    card.dataset.allocId = a.id;
-    const descPreview = (a.description||'').substring(0,60) + ((a.description||'').length > 60 ? '...' : '');
-    const surveyLabel = a.is_survey ? ' <span style="color:#f4a261">📋 SURVEY</span>' : '';
-    const allocDaysPill = getDaysPill(a.days_since_released);
-    card.innerHTML =
-      '<button class="btn-remove" onclick="removeAllocation(' + a.id + ', event)">×</button>' +
-      '<div class="alloc-id">' + (a.display_id||a.job_id) + surveyLabel + '</div>' +
-      '<div class="alloc-site">' + (a.pub_name||'—') + '</div>' +
-      '<div class="alloc-desc">' + descPreview + '</div>' +
-      allocDaysPill +
-      (a.notes ? '<div class="alloc-notes">' + a.notes + '</div>' : '') +
-      '<button class="btn-notes" onclick="openNotesModal(' + a.id + ', event)">✏ notes</button>';
-    card.addEventListener('click', function(e) {
-      if (e.target.classList.contains('btn-remove') || e.target.classList.contains('btn-notes')) return;
-      showDetailFromAlloc(a);
-    });
-    card.style.cursor = 'pointer';
-    const toggle = cell.querySelector('.day-off-toggle');
-    cell.insertBefore(card, toggle);
-  }
-
-  CONTRACTORS.forEach((c, i) => {
-    const el = document.getElementById(`count-${i}`);
-    if (el) el.textContent = `${counts[c] || 0} jobs`;
-  });
-}
-
-// ── Drag & Drop ───────────────────────────────────────────────────────────────
-function onJobDragStart(e, jobId) {
-  dragJobId = jobId;
-  e.dataTransfer.effectAllowed = 'move';
-  e.currentTarget.classList.add('dragging');
-  setTimeout(() => e.currentTarget.classList.remove('dragging'), 0);
-}
-
-function onDragOver(e) {
-  const cell = e.currentTarget;
-  if (cell.classList.contains('day-off')) return;
-  e.preventDefault();
-  cell.classList.add('drag-over');
-}
-
-function onDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
-
-async function onDrop(e) {
-  e.preventDefault();
-  const cell = e.currentTarget;
-  cell.classList.remove('drag-over');
-  if (!dragJobId || cell.classList.contains('day-off')) return;
-
-  const res = await fetch('/api/allocate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      week_start: WEEK_START,
-      job_id: dragJobId,
-      contractor: cell.dataset.contractor,
-      day_date: cell.dataset.date,
-    })
-  });
-  const data = await res.json();
-  if (data.success) {
-    await loadAllocations();
-    renderGrid();
-    dragJobId = null;
-  }
-}
-
-async function removeAllocation(allocId, e) {
-  e.stopPropagation();
-  const res = await fetch(`/api/allocate/${allocId}`, { method: 'DELETE' });
-  const data = await res.json();
-  if (data.success) {
-    await Promise.all([loadJobs(), loadAllocations()]);
-    renderSidebar();
-    renderGrid();
-  }
-}
-
-// ── Notes Modal ───────────────────────────────────────────────────────────────
-function openNotesModal(allocId, e) {
-  e.stopPropagation();
-  currentNotesAllocId = allocId;
-  const alloc = allocations.find(a => a.id === allocId);
-  document.getElementById('modal-notes').value = alloc ? (alloc.notes||'') : '';
-  document.getElementById('modal-survey').checked = alloc ? alloc.is_survey : false;
-  document.getElementById('notes-modal').classList.add('active');
-}
-
-function closeNotesModal() {
-  document.getElementById('notes-modal').classList.remove('active');
-  currentNotesAllocId = null;
-}
-
-async function saveNotes() {
-  if (!currentNotesAllocId) return;
-  const notes = document.getElementById('modal-notes').value;
-  const is_survey = document.getElementById('modal-survey').checked;
-  await fetch(`/api/allocate/${currentNotesAllocId}/notes`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ notes, is_survey })
-  });
-  const alloc = allocations.find(a => a.id === currentNotesAllocId);
-  if (alloc) { alloc.notes = notes; alloc.is_survey = is_survey; }
-  closeNotesModal();
-  renderGrid();
-}
-
-async function toggleDayOff(contractor, date, btn) {
-  const key = `${contractor}_${date}`;
-  const newStatus = (dayStatuses[key] || 'available') === 'off' ? 'available' : 'off';
-  await fetch('/api/contractor-day', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ week_start: WEEK_START, contractor, day_date: date, status: newStatus })
-  });
-  dayStatuses[key] = newStatus;
-  renderGrid();
-}
-
-// ── Job Detail ────────────────────────────────────────────────────────────────
-function showDetailFromAlloc(a) {
-  showDetail({ job_id: a.job_id, display_id: a.display_id, pub_name: a.pub_name,
-    postcode: a.postcode, tab_label: a.tab_label, trade_type: a.trade_type,
-    due_date: a.due_date, due_date_display: a.due_date_display, due_time: a.due_time,
-    days_since_released: a.days_since_released, description: a.description });
-}
-
-const STATUS_DEFS = [
-  { key: 'awaiting-parts',   label: 'Awaiting Parts',      mini: 'Awaiting Parts' },
-  { key: 'awaiting-date',    label: 'Awaiting Cust. Date', mini: 'Awaiting Date' },
-  { key: 'pencilled',        label: 'Pencilled In',        mini: 'Pencilled In' },
-  { key: 'needs-signoff',    label: 'Needs Sign-off',      mini: 'Needs Sign-off' },
-  { key: 'cancel-duplicate', label: 'Cancel/Duplicate',    mini: 'Cancel/Duplicate' },
-  { key: 'ready',            label: 'Ready to Allocate',   mini: 'Ready to Allocate' },
-];
-
-let currentDetailJobId = null;
-let currentTags = [];
-let jobNotesCache = {};  // populated by loadJobNotesBulk on init
-
-async function loadJobNotesBulk() {
-  try {
-    const res = await fetch('/api/job_notes_bulk');
-    jobNotesCache = await res.json();
-  } catch(e) { jobNotesCache = {}; }
-}
-
-function getMiniPills(job_id) {
-  const d = jobNotesCache[job_id];
-  if (!d || (!d.status_tags.length && !d.pencilled_engineer)) return '';
-  let html = '';
-  d.status_tags.forEach(tag => {
-    const def = STATUS_DEFS.find(s => s.key === tag);
-    if (def) html += `<span class="mini-pill ${tag}">${def.mini}</span>`;
-  });
-  if (d.pencilled_engineer) html += `<span class="mini-pill pencilled">✎ ${d.pencilled_engineer.split(' ')[0]}</span>`;
-  return html;
-}
-
-async function showDetail(job) {
-  currentDetailJobId = job.job_id;
-  document.getElementById('detail-title').textContent = job.display_id || job.job_id;
-  document.getElementById('detail-content').innerHTML = `
-    <div class="detail-row"><div class="label">Site</div><div class="value">${job.pub_name||'—'}</div></div>
-    <div class="detail-row"><div class="label">Postcode</div><div class="value">${job.postcode||'—'}</div></div>
-    <div class="detail-row"><div class="label">Type</div><div class="value">${job.tab_label||job.tab||'—'}</div></div>
-    <div class="detail-row"><div class="label">Trade</div><div class="value">${job.trade_type||'—'}</div></div>
-    <div class="detail-row"><div class="label">Due</div><div class="value">${job.due_date_display||job.due_date||'—'} ${job.due_time||''}</div></div>
-    <div class="detail-row"><div class="label">Days Since Released</div><div class="value">${job.days_since_released !== null && job.days_since_released !== undefined ? job.days_since_released + ' day' + (job.days_since_released === 1 ? '' : 's') : '—'}</div></div>
-    <div class="detail-row"><div class="label">Description</div><div class="value">${job.description||'—'}</div></div>
-    <div class="drawer-section">
-      <div class="drawer-section-label">Job Status</div>
-      <div class="status-pills" id="drawer-pills"></div>
-    </div>
-    <div class="drawer-section">
-      <div class="drawer-section-label">Pencil In Engineer</div>
-      <input class="pencilled-input" id="drawer-pencilled" type="text" placeholder="Engineer name…">
-    </div>
-    <div class="drawer-section">
-      <div class="drawer-section-label">Notes</div>
-      <textarea class="drawer-notes-area" id="drawer-notes" placeholder="Add any relevant notes about this job…"></textarea>
-    </div>
-    <button class="drawer-save-btn" onclick="saveJobNote()">Save</button>
-    <div class="drawer-saved-msg" id="drawer-saved">✓ Saved</div>`;
-  document.getElementById('job-detail').classList.add('active');
-
-  // Load existing data for this job
-  try {
-    const res = await fetch('/api/job_note/' + job.job_id);
-    const data = await res.json();
-    currentTags = data.status_tags || [];
-    document.getElementById('drawer-notes').value = data.notes || '';
-    document.getElementById('drawer-pencilled').value = data.pencilled_engineer || '';
-  } catch(e) {
-    currentTags = [];
-  }
-  renderDrawerPills();
-}
-
-function renderDrawerPills() {
-  const container = document.getElementById('drawer-pills');
-  if (!container) return;
-  container.innerHTML = STATUS_DEFS.map(s => {
-    const active = currentTags.includes(s.key) ? 'active' : '';
-    return `<button class="status-pill-btn ${s.key} ${active}" onclick="toggleTag('${s.key}')">${s.label}</button>`;
-  }).join('');
-}
-
-function toggleTag(key) {
-  if (currentTags.includes(key)) {
-    currentTags = currentTags.filter(t => t !== key);
-  } else {
-    currentTags.push(key);
-  }
-  renderDrawerPills();
-}
-
-async function saveJobNote() {
-  if (!currentDetailJobId) return;
-  const notes = document.getElementById('drawer-notes').value;
-  const pencilled_engineer = document.getElementById('drawer-pencilled').value;
-  const res = await fetch('/api/job_note/' + currentDetailJobId, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ notes, status_tags: currentTags, pencilled_engineer })
-  });
-  const data = await res.json();
-  if (data.success) {
-    // Update local cache and re-render sidebar pills
-    jobNotesCache[currentDetailJobId] = { status_tags: currentTags, pencilled_engineer };
-    renderSidebar();
-    const msg = document.getElementById('drawer-saved');
-    if (msg) { msg.style.display = 'block'; setTimeout(() => msg.style.display = 'none', 2000); }
-  }
-}
-
-function closeDetail() {
-  document.getElementById('job-detail').classList.remove('active');
-  currentDetailJobId = null;
-}
-
-document.getElementById('notes-modal').addEventListener('click', function(e) { if (e.target === this) closeNotesModal(); });
-document.getElementById('confirm-modal').addEventListener('click', function(e) { if (e.target === this) closeConfirmModal(); });
 </script>
+
 </body>
 </html>
