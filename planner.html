@@ -39,6 +39,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .job-card .job-due.overdue { color: #e63946; font-weight: 600; }
 .job-card .job-due.soon { color: #f4a261; font-weight: 600; }
 .job-card .job-due.ok { color: #888; }
+.days-pill { display: inline-block; padding: 1px 7px; border-radius: 8px; font-size: 9px; font-weight: 700; margin-top: 3px; margin-right: 4px; }
+.days-pill.green { background: #effdf4; color: #1a7a4a; }
+.days-pill.amber { background: #fff8ef; color: #c77a10; }
+.days-pill.red   { background: #fdf0ef; color: #c0392b; }
 .tag { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; margin-right: 3px; }
 .tag-callout { background: #fff0f0; color: #e63946; }
 .tag-quote { background: #e8f4fd; color: #2196f3; }
@@ -636,7 +640,8 @@ function renderSidebar() {
   list.innerHTML = filtered.map(function(j) {
     const tab = (j.tab||'').toLowerCase();
     const dueClass = getDueClass(j.due_date);
-    const dueLabel = j.due_date ? 'Due: ' + j.due_date : '';
+    const dueLabel = j.due_date_display ? 'Due: ' + j.due_date_display : (j.due_date ? 'Due: ' + j.due_date : '');
+    const daysPill = getDaysPill(j.days_since_released);
     const desc = (j.description||'').substring(0,80) + ((j.description||'').length > 80 ? '...' : '');
     const postcode = j.postcode ? ' · ' + j.postcode : '';
     const detailJson = JSON.stringify(j).replace(/"/g,'&quot;');
@@ -647,6 +652,7 @@ function renderSidebar() {
       '<div class="job-trade">' + (j.trade_type||'') + postcode + '</div>' +
       '<div class="job-desc">' + desc + '</div>' +
       (dueLabel ? '<div class="job-due ' + dueClass + '">' + dueLabel + '</div>' : '') +
+      daysPill +
       '</div>';
   }).join('');
 }
@@ -659,6 +665,15 @@ function getDueClass(due) {
   if (diff < 0) return 'overdue';
   if (diff < 3) return 'soon';
   return 'ok';
+}
+
+// Days-since-released pill — how long since the quote/job was actually
+// released (Due Date minus the standard 10-day turnaround), so it's easy to
+// spot which jobs are getting urgent regardless of which day they're due.
+function getDaysPill(days) {
+  if (days === null || days === undefined) return '';
+  const cls = days >= 8 ? 'red' : (days >= 4 ? 'amber' : 'green');
+  return '<span class="days-pill ' + cls + '">' + days + 'd since release</span>';
 }
 
 // ── Grid ──────────────────────────────────────────────────────────────────────
@@ -688,11 +703,13 @@ function renderGrid() {
     card.dataset.allocId = a.id;
     const descPreview = (a.description||'').substring(0,60) + ((a.description||'').length > 60 ? '...' : '');
     const surveyLabel = a.is_survey ? ' <span style="color:#f4a261">📋 SURVEY</span>' : '';
+    const allocDaysPill = getDaysPill(a.days_since_released);
     card.innerHTML =
       '<button class="btn-remove" onclick="removeAllocation(' + a.id + ', event)">×</button>' +
       '<div class="alloc-id">' + (a.display_id||a.job_id) + surveyLabel + '</div>' +
       '<div class="alloc-site">' + (a.pub_name||'—') + '</div>' +
       '<div class="alloc-desc">' + descPreview + '</div>' +
+      allocDaysPill +
       (a.notes ? '<div class="alloc-notes">' + a.notes + '</div>' : '') +
       '<button class="btn-notes" onclick="openNotesModal(' + a.id + ', event)">✏ notes</button>';
     card.addEventListener('click', function(e) {
@@ -808,7 +825,8 @@ async function toggleDayOff(contractor, date, btn) {
 function showDetailFromAlloc(a) {
   showDetail({ job_id: a.job_id, display_id: a.display_id, pub_name: a.pub_name,
     postcode: a.postcode, tab_label: a.tab_label, trade_type: a.trade_type,
-    due_date: a.due_date, due_time: a.due_time, description: a.description });
+    due_date: a.due_date, due_date_display: a.due_date_display, due_time: a.due_time,
+    days_since_released: a.days_since_released, description: a.description });
 }
 
 const STATUS_DEFS = [
@@ -851,7 +869,8 @@ async function showDetail(job) {
     <div class="detail-row"><div class="label">Postcode</div><div class="value">${job.postcode||'—'}</div></div>
     <div class="detail-row"><div class="label">Type</div><div class="value">${job.tab_label||job.tab||'—'}</div></div>
     <div class="detail-row"><div class="label">Trade</div><div class="value">${job.trade_type||'—'}</div></div>
-    <div class="detail-row"><div class="label">Due</div><div class="value">${job.due_date||'—'} ${job.due_time||''}</div></div>
+    <div class="detail-row"><div class="label">Due</div><div class="value">${job.due_date_display||job.due_date||'—'} ${job.due_time||''}</div></div>
+    <div class="detail-row"><div class="label">Days Since Released</div><div class="value">${job.days_since_released !== null && job.days_since_released !== undefined ? job.days_since_released + ' day' + (job.days_since_released === 1 ? '' : 's') : '—'}</div></div>
     <div class="detail-row"><div class="label">Description</div><div class="value">${job.description||'—'}</div></div>
     <div class="drawer-section">
       <div class="drawer-section-label">Job Status</div>
