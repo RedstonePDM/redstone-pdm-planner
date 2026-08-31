@@ -44,12 +44,19 @@ CONTRACTORS = [
 def get_active_contractors():
     """Live contractor list, pulled from contractors_db (same table the
     Contractors admin page writes to) — so anyone added or archived there
-    shows up here immediately without a code change. Falls back to the old
-    hardcoded CONTRACTORS list only if the database lookup itself fails."""
+    shows up here immediately without a code change. Only includes
+    contractors flagged show_in_planner=true, so occasional-use contractors
+    can be hidden from the planner grid without archiving them entirely.
+    Falls back to the old hardcoded CONTRACTORS list only if the database
+    lookup itself fails."""
     try:
         conn = get_db()
         cur = conn.cursor()
-        cur.execute("SELECT name FROM contractors_db WHERE status = 'active' ORDER BY name")
+        cur.execute("""
+            SELECT name FROM contractors_db
+            WHERE status = 'active' AND COALESCE(show_in_planner, TRUE) = TRUE
+            ORDER BY name
+        """)
         rows = cur.fetchall()
         cur.close()
         conn.close()
