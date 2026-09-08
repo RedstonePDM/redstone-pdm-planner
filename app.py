@@ -37,7 +37,7 @@ CONTRACTORS = [
     "Cassius Kwarteng",
     "James Rutland",
     "Dwain Hinze",
-    "Ajax Smartfit",
+    "Ajaz Smartfit",
 ]
 
 
